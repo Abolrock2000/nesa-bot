@@ -17,7 +17,7 @@ BIRTH_DAY = 8
 BIRTH_MONTH = 8
 
 # ============================================================
-# ===== صفحه قلب (با i love you و ahu goozlum وسط) =====
+# ===== صفحه قلب =====
 # ============================================================
 HEART_PAGE = """
 <!DOCTYPE html>
@@ -79,15 +79,15 @@ HEART_PAGE = """
 """
 
 # ============================================================
-# ===== عکس‌ها =====
+# ===== عکس‌های جدید =====
 # ============================================================
 PHOTOS = {
-    "📸 عکس ۱": "photos/khode.nesa_14041113_110733733.jpg",
-    "📸 عکس ۲": "photos/khode.nesa_14041205_130846539.jpg",
-    "📸 عکس ۳": "photos/IMG_20260719_211523_837.jpg",
-    "📸 عکس ۴": "photos/IMG_20260719_211518_014.jpg",
-    "📸 عکس ۵": "photos/d36a8351-535-48d8-ad8b-ea78d54eff7e.jpg",
-    "📸 عکس ۶": "photos/IMG_20260723_132713_292.jpg",
+    "📸 عکس ۱": "/data/data/com.termux/files/home/storage/pictures/Telegram/IMG_20260801_224828_501.jpg",
+    "📸 عکس ۲": "/data/data/com.termux/files/home/storage/pictures/Gallery/owner/nesa/null_14041109_222510829.jpg",
+    "📸 عکس ۳": "/data/data/com.termux/files/home/storage/pictures/Gallery/owner/nesa/null_14041125_153021650.jpg",
+    "📸 عکس ۴": "/data/data/com.termux/files/home/storage/pictures/Gallery/owner/nesa/IMG_20260707_153249_974.jpg",
+    "📸 عکس ۵": "/data/data/com.termux/files/home/storage/pictures/Gallery/owner/nesa/IMG_20260709_234307_968.jpg",
+    "📸 عکس ۶": "/data/data/com.termux/files/home/storage/pictures/Gallery/owner/nesa/IMG_20260719_211523_837.jpg",
 }
 
 # ============================================================
@@ -283,7 +283,7 @@ def handle_message(chat_id, text):
         if photo_path and os.path.exists(photo_path):
             send_photo(chat_id, photo_path, f"{text} مخصوص تو... ❤️")
         else:
-            send_message(chat_id, "عکس پیدا نشد!")
+            send_message(chat_id, "عکس پیدا نشد! لطفاً مسیر رو چک کن.")
         return
     
     # ===== بقیه دکمه‌ها =====
@@ -395,7 +395,7 @@ def heart_page():
 # ===== اجرای اصلی =====
 # ============================================================
 if __name__ == "__main__":
-    print("🚀 ربات ahu goozlum با تمام امکانات روشن شد...")
+    print("🚀 ربات ahu goozlum با عکس‌های جدید روشن شد...")
     print(f"🎂 تولد: {BIRTH_DAY}/{BIRTH_MONTH} (۱۷ مرداد)")
     print(f"📸 تعداد عکس‌ها: {len(PHOTOS)}")
     print("❤️ صفحه قلب در آدرس: /heart")
