@@ -79,15 +79,15 @@ HEART_PAGE = """
 """
 
 # ============================================================
-# ===== عکس‌های جدید =====
+# ===== عکس‌ها با اسم‌های دقیق از لیست شما =====
 # ============================================================
 PHOTOS = {
-    "📸 عکس ۱": "/data/data/com.termux/files/home/storage/pictures/Telegram/IMG_20260801_224828_501.jpg",
-    "📸 عکس ۲": "/data/data/com.termux/files/home/storage/pictures/Gallery/owner/nesa/null_14041109_222510829.jpg",
-    "📸 عکس ۳": "/data/data/com.termux/files/home/storage/pictures/Gallery/owner/nesa/null_14041125_153021650.jpg",
-    "📸 عکس ۴": "/data/data/com.termux/files/home/storage/pictures/Gallery/owner/nesa/IMG_20260707_153249_974.jpg",
-    "📸 عکس ۵": "/data/data/com.termux/files/home/storage/pictures/Gallery/owner/nesa/IMG_20260709_234307_968.jpg",
-    "📸 عکس ۶": "/data/data/com.termux/files/home/storage/pictures/Gallery/owner/nesa/IMG_20260719_211523_837.jpg",
+    "📸 عکس ۱": "photos/IMG_20260801_224828_501.jpg",
+    "📸 عکس ۲": "photos/null_14041109_222510829.jpg",
+    "📸 عکس ۳": "photos/null_14041125_153021650.jpg",
+    "📸 عکس ۴": "photos/IMG_20260707_153249_974.jpg",
+    "📸 عکس ۵": "photos/IMG_20260709_234307_968.jpg",
+    "📸 عکس ۶": "photos/IMG_20260719_211523_837.jpg",
 }
 
 # ============================================================
@@ -171,7 +171,7 @@ BUTTONS = [
     "🌸 موهای نسا",
     "🌸 لپ‌های نسا",
     "🌸 خال‌های صورت نسا",
-    "🌸 لب‌های نسا",
+    "🌸 لب‌های نسa",
     "🌸 چشم‌های نسا",
     "📸 عکس‌ها",
     "📸 عکس ۱",
@@ -245,6 +245,9 @@ def send_message(chat_id, text, reply_markup=None):
     return False
 
 def send_photo(chat_id, photo_path, caption=""):
+    if not os.path.exists(photo_path):
+        send_message(chat_id, "❌ عکس پیدا نشد! لطفاً مسیر رو چک کن.")
+        return False
     urls = [
         f"https://api.telegram.org/bot{TOKEN}/sendPhoto",
         f"https://telegram.dog/bot{TOKEN}/sendPhoto",
@@ -277,16 +280,14 @@ def get_days_since(day, month, year):
 def handle_message(chat_id, text):
     text = text.strip()
     
-    # ===== اول دکمه‌های عکس رو چک کن =====
-    if text in ["📸 عکس ۱", "📸 عکس ۲", "📸 عکس ۳", "📸 عکس ۴", "📸 عکس ۵", "📸 عکس ۶"]:
+    if text in ["📸 عکس ۱", "📸 عکس ２", "📸 عکس ۳", "📸 عکس ۴", "📸 عکس ۵", "📸 عکس ６"]:
         photo_path = PHOTOS.get(text)
-        if photo_path and os.path.exists(photo_path):
+        if photo_path:
             send_photo(chat_id, photo_path, f"{text} مخصوص تو... ❤️")
         else:
-            send_message(chat_id, "عکس پیدا نشد! لطفاً مسیر رو چک کن.")
+            send_message(chat_id, "عکس پیدا نشد!")
         return
     
-    # ===== بقیه دکمه‌ها =====
     if text in BUTTONS:
         if text == "🌸 موهای نسا":
             send_message(chat_id, random.choice(HAIR_POEMS))
@@ -340,7 +341,6 @@ def handle_message(chat_id, text):
             )
         return
     
-    # ===== پیام متنی معمولی =====
     if str(chat_id) != YOUR_CHAT_ID:
         user_message = f"📩 **پیام جدید از ahu goozlum:**\n\n{text}"
         send_message(YOUR_CHAT_ID, user_message)
