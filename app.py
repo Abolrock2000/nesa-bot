@@ -15,6 +15,8 @@ YOUR_CHAT_ID = "1228473012"
 
 BIRTH_DAY = 8
 BIRTH_MONTH = 8
+BIRTH_HOUR = 0
+BIRTH_MINUTE = 0
 
 # ============================================================
 # ===== صفحه قلب =====
@@ -79,64 +81,42 @@ HEART_PAGE = """
 """
 
 # ============================================================
-# ===== عکس‌ها =====
+# ===== عکس‌ها با متن‌های اختصاصی =====
 # ============================================================
 PHOTOS = {
-    "📸 عکس ۱": "photos/IMG_20260801_224828_501.jpg",
-    "📸 عکس ۲": "photos/null_14041109_222510829.jpg",
-    "📸 عکس ۳": "photos/null_14041125_153021650.jpg",
-    "📸 عکس ۴": "photos/IMG_20260707_153249_974.jpg",
-    "📸 عکس ۵": "photos/IMG_20260709_234307_968.jpg",
-    "📸 عکس ۶": "photos/IMG_20260719_211523_837.jpg",
+    "📸 عکس ۱": {"path": "photos/IMG_20260801_224828_501.jpg", "caption": "🌹 عشق زندگیم... ❤️"},
+    "📸 عکس ۲": {"path": "photos/null_14041109_222510829.jpg", "caption": "💫 قلب من... تو هستی"},
+    "📸 عکس ۳": {"path": "photos/null_14041125_153021650.jpg", "caption": "🌸 بهار زندگی من..."},
+    "📸 عکس ۴": {"path": "photos/IMG_20260707_153249_974.jpg", "caption": "🌙 ماه شب‌های من..."},
+    "📸 عکس ۵": {"path": "photos/IMG_20260709_234307_968.jpg", "caption": "☀️ روشن‌ترین روز من..."},
+    "📸 عکس ۶": {"path": "photos/IMG_20260719_211523_837.jpg", "caption": "❤️ تمامِ دنیای من..."},
 }
 
 # ============================================================
-# ===== تولد و توابع =====
+# ===== پیام تولد =====
 # ============================================================
-BIRTHDAY_POEMS = [
-    """🎂 **تولدت مبارک، ahu goozlum...** 🎂
+BIRTHDAY_MESSAGE = """🎂 **تولدت مبارک، ahu goozlum...** 🎂
 
 امروز روزی است که زمین یک ستاره‌ی تازه پیدا کرد.
 روزی که آسمان، زیباترین فرشته‌اش را به زمین فرستاد.
+
 🍃 تولدت مبارک، ای زیباترین فصل زندگی من...
-❤️ من که همیشه در کنار توام، امروز بیشتر از همیشه دوستت دارم."""
-]
+❤️ من که همیشه در کنار توام، امروز بیشتر از همیشه دوستت دارم.
 
-def days_until_birthday():
-    today = datetime.datetime.now()
-    birth = datetime.datetime(today.year, BIRTH_MONTH, BIRTH_DAY)
-    if today > birth:
-        birth = datetime.datetime(today.year + 1, BIRTH_MONTH, BIRTH_DAY)
-    diff = birth - today
-    return diff.days
-
-# ============================================================
-# ===== کیبورد =====
-# ============================================================
-def get_main_keyboard():
-    return {
-        "keyboard": [
-            ["📸 عکس‌ها"],
-            ["🎂 تولد نسا", "📅 روز آشنایی"],
-            ["⏳ تا تولدت"],
-            ["🔙 بازگشت به منو"]
-        ],
-        "resize_keyboard": True
-    }
-
-def get_photo_keyboard():
-    return {
-        "keyboard": [
-            ["📸 عکس ۱", "📸 عکس ۲", "📸 عکس ۳"],
-            ["📸 عکس ۴", "📸 عکس ۵", "📸 عکس ۶"],
-            ["🔙 بازگشت به منو"]
-        ],
-        "resize_keyboard": True
-    }
+🌹 عشق من، تمام هستی من... همیشه مال منی.
+💫 به امید سال‌هایی پر از عشق، لبخند و آرامش..."""
 
 # ============================================================
 # ===== توابع =====
 # ============================================================
+def days_until_birthday():
+    today = datetime.datetime.now()
+    birth = datetime.datetime(today.year, BIRTH_MONTH, BIRTH_DAY, BIRTH_HOUR, BIRTH_MINUTE)
+    if today > birth:
+        birth = datetime.datetime(today.year + 1, BIRTH_MONTH, BIRTH_DAY, BIRTH_HOUR, BIRTH_MINUTE)
+    diff = birth - today
+    return diff
+
 def send_message(chat_id, text, reply_markup=None):
     urls = [
         f"https://api.telegram.org/bot{TOKEN}/sendMessage",
@@ -157,7 +137,7 @@ def send_message(chat_id, text, reply_markup=None):
 
 def send_photo(chat_id, photo_path, caption=""):
     if not os.path.exists(photo_path):
-        send_message(chat_id, "❌ عکس پیدا نشد! لطفاً مسیر رو چک کن.")
+        send_message(chat_id, "❌ عکس پیدا نشد!")
         return False
     urls = [
         f"https://api.telegram.org/bot{TOKEN}/sendPhoto",
@@ -186,15 +166,39 @@ def get_days_since(day, month, year):
         return 0
 
 # ============================================================
+# ===== کیبورد =====
+# ============================================================
+def get_main_keyboard():
+    return {
+        "keyboard": [
+            ["📸 عکس‌ها"],
+            ["🎂 تولد نسا", "📅 روز آشنایی"],
+            ["⏳ تا تولدت"],
+            ["🔙 بازگشت به منو"]
+        ],
+        "resize_keyboard": True
+    }
+
+def get_photo_keyboard():
+    return {
+        "keyboard": [
+            ["📸 عکس ۱", "📸 عکس ۲", "📸 عکس ۳"],
+            ["📸 عکس ۴", "📸 عکس ۵", "📸 عکس ۶"],
+            ["🔙 بازگشت به منو"]
+        ],
+        "resize_keyboard": True
+    }
+
+# ============================================================
 # ===== پردازش پیام‌ها =====
 # ============================================================
 def handle_message(chat_id, text):
     text = text.strip()
     
     if text in ["📸 عکس ۱", "📸 عکس ۲", "📸 عکس ۳", "📸 عکس ۴", "📸 عکس ۵", "📸 عکس ۶"]:
-        photo_path = PHOTOS.get(text)
-        if photo_path:
-            send_photo(chat_id, photo_path, f"{text} مخصوص تو... ❤️")
+        photo = PHOTOS.get(text)
+        if photo:
+            send_photo(chat_id, photo["path"], photo["caption"])
         else:
             send_message(chat_id, "عکس پیدا نشد!")
         return
@@ -203,7 +207,7 @@ def handle_message(chat_id, text):
         send_message(chat_id, "📸 کدوم عکس رو می‌خوای ببینی؟", get_photo_keyboard())
     
     elif text == "🎂 تولد نسا":
-        send_message(chat_id, random.choice(BIRTHDAY_POEMS))
+        send_message(chat_id, BIRTHDAY_MESSAGE)
     
     elif text == "📅 روز آشنایی":
         days = get_days_since(24, 12, 1404)
@@ -213,8 +217,11 @@ def handle_message(chat_id, text):
             send_message(chat_id, "📅 روز آشنایی ما ۲۴ اسفند ۱۴۰۴ است.")
     
     elif text == "⏳ تا تولدت":
-        days_left = days_until_birthday()
-        send_message(chat_id, f"🎂 تا تولد ahu goozlum، {days_left} روز مونده... ❤️")
+        diff = days_until_birthday()
+        days = diff.days
+        hours = diff.seconds // 3600
+        minutes = (diff.seconds % 3600) // 60
+        send_message(chat_id, f"🎂 تا تولد ahu goozlum، {days} روز و {hours} ساعت و {minutes} دقیقه مونده... ❤️")
     
     elif text == "🔙 بازگشت به منو":
         send_message(chat_id, "به منوی اصلی برگشتی 🏠", get_main_keyboard())
@@ -224,7 +231,7 @@ def handle_message(chat_id, text):
             "🌸 **به ربات اختصاصی ahu goozlum خوش آمدی!** 🌸\n\n"
             "📸 برای دیدن عکس‌ها، دکمه‌ی «عکس‌ها» رو بزن.\n"
             "🎂 تولدت رو هم می‌تونی ببینی.\n"
-            "⏳ تعداد روزهای باقی‌مونده تا تولدت رو هم چک کن.\n"
+            "⏳ تعداد روزهای باقی‌مونده تا تولدت رو چک کن.\n"
             "❤️ صفحه قلب: /heart",
             get_main_keyboard()
         )
@@ -233,21 +240,28 @@ def handle_message(chat_id, text):
         send_message(chat_id, "❌ دستور نامعتبر! لطفاً از دکمه‌ها استفاده کن.")
 
 # ============================================================
-# ===== تایمر تولد =====
+# ===== تایمر تولد (ارسال خودکار در ۱۷ مرداد ساعت ۱۲ شب) =====
 # ============================================================
 def birthday_timer():
     while True:
         try:
             now = datetime.datetime.now()
-            if now.month == BIRTH_MONTH and now.day == BIRTH_DAY and now.hour == 0 and now.minute == 0:
+            if (now.month == BIRTH_MONTH and 
+                now.day == BIRTH_DAY and 
+                now.hour == BIRTH_HOUR and 
+                now.minute == BIRTH_MINUTE):
+                
                 print("🎂 امروز تولد ahu goozlum است! ارسال پیام...")
-                birthday_message = random.choice(BIRTHDAY_POEMS)
-                send_message(YOUR_CHAT_ID, birthday_message)
-                photo_path = PHOTOS["📸 عکس ۱"]
-                if os.path.exists(photo_path):
-                    send_photo(YOUR_CHAT_ID, photo_path, "📸 این عکس مخصوص تولدته، ahu goozlum... ❤️")
+                send_message(YOUR_CHAT_ID, BIRTHDAY_MESSAGE)
+                
+                # ارسال عکس شماره یک با متن اختصاصی
+                photo = PHOTOS["📸 عکس ۱"]
+                if os.path.exists(photo["path"]):
+                    send_photo(YOUR_CHAT_ID, photo["path"], photo["caption"])
+                
                 print("✅ پیام و عکس تولد ارسال شد!")
-                time.sleep(86400)
+                time.sleep(86400)  # یک روز صبر کن تا دوباره نفرسته
+                
         except Exception as e:
             print(f"Error in birthday_timer: {e}")
         time.sleep(60)
@@ -276,8 +290,8 @@ def heart_page():
 # ===== اجرای اصلی =====
 # ============================================================
 if __name__ == "__main__":
-    print("🚀 ربات ahu goozlum با دکمه‌ی «تا تولدت» روشن شد...")
-    print(f"🎂 تولد: {BIRTH_DAY}/{BIRTH_MONTH} (۱۷ مرداد)")
+    print("🚀 ربات ahu goozlum با تایمر دقیق تولد روشن شد...")
+    print(f"🎂 تولد: {BIRTH_DAY}/{BIRTH_MONTH} (۱۷ مرداد) ساعت {BIRTH_HOUR}:{BIRTH_MINUTE}")
     print(f"📸 تعداد عکس‌ها: {len(PHOTOS)}")
     print("❤️ صفحه قلب در آدرس: /heart")
     
