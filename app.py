@@ -6,7 +6,6 @@ import datetime
 import os
 import threading
 import time
-import pytz
 
 app = Flask(__name__)
 
@@ -19,10 +18,15 @@ BIRTH_MONTH = 8
 BIRTH_HOUR = 0
 BIRTH_MINUTE = 0
 
-# ===== تنظیم منطقه زمانی ایران =====
-IRAN_TZ = pytz.timezone('Asia/Tehran')
+# ===== تنظیم منطقه زمانی ایران بدون pytz =====
+IRAN_OFFSET = datetime.timedelta(hours=3, minutes=30)
 
-# ===== پسورد =====
+def get_current_iran_time():
+    """دریافت زمان فعلی ایران با offset دستی"""
+    utc_now = datetime.datetime.now(datetime.timezone.utc)
+    iran_time = utc_now.astimezone(datetime.timezone(IRAN_OFFSET))
+    return iran_time
+
 PASSWORD = "1386"
 
 # ============================================================
@@ -63,7 +67,7 @@ def get_main_keyboard():
     return {
         "keyboard": [
             ["📸 عکس‌ها"],
-            ["🎂 تولد نسا", "📅 روز آشنایی"],
+            ["🎂 تولد نسa", "📅 روز آشنایی"],
             ["⏳ ساعت تا تولدت"],
             ["🔙 بازگشت به منو"]
         ],
@@ -91,18 +95,16 @@ def get_password_keyboard():
 # ============================================================
 # ===== توابع =====
 # ============================================================
-def get_current_iran_time():
-    """دریافت زمان فعلی ایران"""
-    return datetime.datetime.now(IRAN_TZ)
-
 def hours_until_birthday():
     """محاسبه ساعت باقی‌مونده تا تولد (فقط ساعت)"""
     now = get_current_iran_time()
-    birth = datetime.datetime(now.year, BIRTH_MONTH, BIRTH_DAY, BIRTH_HOUR, BIRTH_MINUTE, tzinfo=IRAN_TZ)
+    birth = datetime.datetime(now.year, BIRTH_MONTH, BIRTH_DAY, BIRTH_HOUR, BIRTH_MINUTE)
+    birth = birth.replace(tzinfo=datetime.timezone(IRAN_OFFSET))
     if now > birth:
-        birth = datetime.datetime(now.year + 1, BIRTH_MONTH, BIRTH_DAY, BIRTH_HOUR, BIRTH_MINUTE, tzinfo=IRAN_TZ)
+        birth = datetime.datetime(now.year + 1, BIRTH_MONTH, BIRTH_DAY, BIRTH_HOUR, BIRTH_MINUTE)
+        birth = birth.replace(tzinfo=datetime.timezone(IRAN_OFFSET))
     diff = birth - now
-    return int(diff.total_seconds() // 3600)  # فقط ساعت
+    return int(diff.total_seconds() // 3600)
 
 def send_message(chat_id, text, reply_markup=None):
     urls = [
@@ -146,7 +148,7 @@ def send_photo(chat_id, photo_path, caption=""):
 def get_days_since(day, month, year):
     try:
         now = get_current_iran_time()
-        start = datetime.datetime(year, month, day, tzinfo=IRAN_TZ)
+        start = datetime.datetime(year, month, day, tzinfo=datetime.timezone(IRAN_OFFSET))
         diff = now - start
         return diff.days
     except:
@@ -233,7 +235,7 @@ def handle_message(chat_id, text):
     send_message(chat_id, "❌ دستور نامعتبر! لطفاً از دکمه‌ها استفاده کن.", get_main_keyboard())
 
 # ============================================================
-# ===== تایمر تولد (بر اساس ساعت ایران) =====
+# ===== تایمر تولد =====
 # ============================================================
 def birthday_timer():
     while True:
@@ -256,7 +258,7 @@ def birthday_timer():
         time.sleep(60)
 
 # ============================================================
-# ===== Webhook =====
+# ===== Webhook و قلب =====
 # ============================================================
 @app.route('/', methods=['GET', 'POST'])
 def webhook():
@@ -271,9 +273,6 @@ def webhook():
             print(f"Error: {e}")
     return "OK", 200
 
-# ============================================================
-# ===== صفحه قلب =====
-# ============================================================
 @app.route('/heart')
 def heart_page():
     return render_template_string("""
