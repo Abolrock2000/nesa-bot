@@ -6,6 +6,7 @@ import datetime
 import os
 import threading
 import time
+import pytz
 
 app = Flask(__name__)
 
@@ -18,13 +19,16 @@ BIRTH_MONTH = 8
 BIRTH_HOUR = 0
 BIRTH_MINUTE = 0
 
-# ===== پسورد اختصاصی (تاریخ تولد پارتنر) =====
-PASSWORD = "1386"  # اینجا تاریخ تولد رو بذار
+# ===== تنظیم منطقه زمانی ایران =====
+IRAN_TZ = pytz.timezone('Asia/Tehran')
+
+# ===== پسورد =====
+PASSWORD = "1386"
 
 # ============================================================
-# ===== دیکشنری برای ذخیره‌ی وضعیت کاربران =====
+# ===== دیکشنری وضعیت کاربران =====
 # ============================================================
-user_access = {}  # {chat_id: {"photos": False, "birthday": False, "meet": False, "timer": False}}
+user_access = {}
 
 # ============================================================
 # ===== عکس‌ها =====
@@ -60,7 +64,7 @@ def get_main_keyboard():
         "keyboard": [
             ["📸 عکس‌ها"],
             ["🎂 تولد نسا", "📅 روز آشنایی"],
-            ["⏳ تا تولدت"],
+            ["⏳ ساعت تا تولدت"],
             ["🔙 بازگشت به منو"]
         ],
         "resize_keyboard": True
@@ -87,13 +91,18 @@ def get_password_keyboard():
 # ============================================================
 # ===== توابع =====
 # ============================================================
-def days_until_birthday():
-    today = datetime.datetime.now()
-    birth = datetime.datetime(today.year, BIRTH_MONTH, BIRTH_DAY, BIRTH_HOUR, BIRTH_MINUTE)
-    if today > birth:
-        birth = datetime.datetime(today.year + 1, BIRTH_MONTH, BIRTH_DAY, BIRTH_HOUR, BIRTH_MINUTE)
-    diff = birth - today
-    return diff
+def get_current_iran_time():
+    """دریافت زمان فعلی ایران"""
+    return datetime.datetime.now(IRAN_TZ)
+
+def hours_until_birthday():
+    """محاسبه ساعت باقی‌مونده تا تولد (فقط ساعت)"""
+    now = get_current_iran_time()
+    birth = datetime.datetime(now.year, BIRTH_MONTH, BIRTH_DAY, BIRTH_HOUR, BIRTH_MINUTE, tzinfo=IRAN_TZ)
+    if now > birth:
+        birth = datetime.datetime(now.year + 1, BIRTH_MONTH, BIRTH_DAY, BIRTH_HOUR, BIRTH_MINUTE, tzinfo=IRAN_TZ)
+    diff = birth - now
+    return int(diff.total_seconds() // 3600)  # فقط ساعت
 
 def send_message(chat_id, text, reply_markup=None):
     urls = [
@@ -136,26 +145,26 @@ def send_photo(chat_id, photo_path, caption=""):
 
 def get_days_since(day, month, year):
     try:
-        today = datetime.datetime.now()
-        start = datetime.datetime(year, month, day)
-        diff = today - start
+        now = get_current_iran_time()
+        start = datetime.datetime(year, month, day, tzinfo=IRAN_TZ)
+        diff = now - start
         return diff.days
     except:
         return 0
 
 # ============================================================
-# ===== پردازش پیام‌ها با پسورد =====
+# ===== پردازش پیام‌ها =====
 # ============================================================
 def handle_message(chat_id, text):
     text = text.strip()
     chat_id = str(chat_id)
     
-    # ===== اگر کاربر در حالت وارد کردن پسورد است =====
+    # ===== پسورد =====
     if user_access.get(chat_id, {}).get("waiting_for_password"):
         if text == PASSWORD:
             user_access[chat_id]["photos"] = True
             user_access[chat_id]["waiting_for_password"] = False
-            send_message(chat_id, "✅ دسترسی به عکس‌ها باز شد! عکس مورد نظر رو انتخاب کن.", get_photo_keyboard())
+            send_message(chat_id, "✅ دسترسی به عکس‌ها باز شد!", get_photo_keyboard())
         else:
             send_message(chat_id, "❌ پسورد اشتباه است! دوباره تلاش کن.", get_password_keyboard())
         return
@@ -196,13 +205,10 @@ def handle_message(chat_id, text):
             send_message(chat_id, "📅 روز آشنایی ما ۲۴ اسفند ۱۴۰۴ است.")
         return
     
-    # ===== تا تولدت =====
-    if text == "⏳ تا تولدت":
-        diff = days_until_birthday()
-        days = diff.days
-        hours = diff.seconds // 3600
-        minutes = (diff.seconds % 3600) // 60
-        send_message(chat_id, f"🎂 تا تولد ahu goozlum، {days} روز و {hours} ساعت و {minutes} دقیقه مونده... ❤️")
+    # ===== ساعت تا تولدت =====
+    if text == "⏳ ساعت تا تولدت":
+        hours = hours_until_birthday()
+        send_message(chat_id, f"🎂 تا تولد ahu goozlum، {hours:,} ساعت مونده... ❤️")
         return
     
     # ===== بازگشت به منو =====
@@ -218,22 +224,21 @@ def handle_message(chat_id, text):
             "🌸 **به ربات اختصاصی ahu goozlum خوش آمدی!** 🌸\n\n"
             "📸 برای دیدن عکس‌ها، دکمه‌ی «عکس‌ها» رو بزن و پسورد رو وارد کن.\n"
             "🎂 تولدت رو هم می‌تونی ببینی.\n"
-            "⏳ تعداد روزهای باقی‌مونده تا تولدت رو چک کن.\n"
+            "⏳ ساعت باقی‌مونده تا تولدت رو چک کن.\n"
             "❤️ صفحه قلب: /heart",
             get_main_keyboard()
         )
         return
     
-    # ===== دستور نامعتبر =====
     send_message(chat_id, "❌ دستور نامعتبر! لطفاً از دکمه‌ها استفاده کن.", get_main_keyboard())
 
 # ============================================================
-# ===== تایمر تولد =====
+# ===== تایمر تولد (بر اساس ساعت ایران) =====
 # ============================================================
 def birthday_timer():
     while True:
         try:
-            now = datetime.datetime.now()
+            now = get_current_iran_time()
             if (now.month == BIRTH_MONTH and 
                 now.day == BIRTH_DAY and 
                 now.hour == BIRTH_HOUR and 
@@ -331,7 +336,7 @@ def heart_page():
 # ===== اجرای اصلی =====
 # ============================================================
 if __name__ == "__main__":
-    print("🚀 ربات ahu goozlum با پسورد برای عکس‌ها روشن شد...")
+    print("🚀 ربات ahu goozlum با ساعت تا تولد و تایمر ایران روشن شد...")
     print(f"🔑 پسورد: {PASSWORD}")
     print(f"🎂 تولد: {BIRTH_DAY}/{BIRTH_MONTH} (۱۷ مرداد) ساعت {BIRTH_HOUR}:{BIRTH_MINUTE}")
     print(f"📸 تعداد عکس‌ها: {len(PHOTOS)}")
