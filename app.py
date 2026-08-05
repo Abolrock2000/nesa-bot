@@ -18,25 +18,17 @@ BIRTH_MONTH = 8
 BIRTH_HOUR = 0
 BIRTH_MINUTE = 0
 
-# ===== تنظیم منطقه زمانی ایران بدون pytz =====
 IRAN_OFFSET = datetime.timedelta(hours=3, minutes=30)
 
 def get_current_iran_time():
-    """دریافت زمان فعلی ایران با offset دستی"""
     utc_now = datetime.datetime.now(datetime.timezone.utc)
     iran_time = utc_now.astimezone(datetime.timezone(IRAN_OFFSET))
     return iran_time
 
 PASSWORD = "1386"
 
-# ============================================================
-# ===== دیکشنری وضعیت کاربران =====
-# ============================================================
 user_access = {}
 
-# ============================================================
-# ===== عکس‌ها =====
-# ============================================================
 PHOTOS = {
     "📸 عکس ۱": {"path": "photos/IMG_20260801_224828_501.jpg", "caption": "🌹 عشق زندگیم... ❤️"},
     "📸 عکس ۲": {"path": "photos/null_14041109_222510829.jpg", "caption": "💫 قلب من... تو هستی"},
@@ -46,9 +38,6 @@ PHOTOS = {
     "📸 عکس ۶": {"path": "photos/IMG_20260719_211523_837.jpg", "caption": "❤️ تمامِ دنیای من..."},
 }
 
-# ============================================================
-# ===== پیام تولد =====
-# ============================================================
 BIRTHDAY_MESSAGE = """🎂 **تولدت مبارک، ahu goozlum...** 🎂
 
 امروز روزی است که زمین یک ستاره‌ی تازه پیدا کرد.
@@ -60,14 +49,20 @@ BIRTHDAY_MESSAGE = """🎂 **تولدت مبارک، ahu goozlum...** 🎂
 🌹 عشق من، تمام هستی من... همیشه مال منی.
 💫 به امید سال‌هایی پر از عشق، لبخند و آرامش..."""
 
-# ============================================================
-# ===== کیبوردها =====
-# ============================================================
+SECOND_QUOTES = [
+    "هر ثانیه‌ای که می‌گذرد، عشق من به تو عمیق‌تر می‌شود... ❤️",
+    "ثانیه‌ها می‌گذرند، اما عشق من به تو هرگز کهنه نمی‌شود... 🌹",
+    "در هر ثانیه‌ای از زندگی‌ام، تو را نفس می‌کشم... 💫",
+    "ثانیه‌های بی‌تو، مثل قرن‌ها می‌گذرند... اما با تو، حتی ثانیه‌ها هم جاودانه‌اند... ✨",
+    "هر ثانیه که می‌گذرد، یک دلیل تازه برای دوست داشتن تو پیدا می‌کنم... ❤️",
+    "ثانیه‌ها را بشمار، اما عشق را نه... چون عشق من به تو بی‌نهایت است... 🌸",
+]
+
 def get_main_keyboard():
     return {
         "keyboard": [
             ["📸 عکس‌ها"],
-            ["🎂 تولد نسa", "📅 روز آشنایی"],
+            ["🎂 تولد نسا", "📅 روز آشنایی"],
             ["⏳ ساعت تا تولدت"],
             ["🔙 بازگشت به منو"]
         ],
@@ -92,11 +87,7 @@ def get_password_keyboard():
         "resize_keyboard": True
     }
 
-# ============================================================
-# ===== توابع =====
-# ============================================================
 def hours_until_birthday():
-    """محاسبه ساعت باقی‌مونده تا تولد (فقط ساعت)"""
     now = get_current_iran_time()
     birth = datetime.datetime(now.year, BIRTH_MONTH, BIRTH_DAY, BIRTH_HOUR, BIRTH_MINUTE)
     birth = birth.replace(tzinfo=datetime.timezone(IRAN_OFFSET))
@@ -154,14 +145,10 @@ def get_days_since(day, month, year):
     except:
         return 0
 
-# ============================================================
-# ===== پردازش پیام‌ها =====
-# ============================================================
 def handle_message(chat_id, text):
     text = text.strip()
     chat_id = str(chat_id)
     
-    # ===== پسورد =====
     if user_access.get(chat_id, {}).get("waiting_for_password"):
         if text == PASSWORD:
             user_access[chat_id]["photos"] = True
@@ -171,7 +158,6 @@ def handle_message(chat_id, text):
             send_message(chat_id, "❌ پسورد اشتباه است! دوباره تلاش کن.", get_password_keyboard())
         return
     
-    # ===== عکس‌ها =====
     if text in ["📸 عکس ۱", "📸 عکس ۲", "📸 عکس ۳", "📸 عکس ۴", "📸 عکس ۵", "📸 عکس ۶"]:
         if user_access.get(chat_id, {}).get("photos", False):
             photo = PHOTOS.get(text)
@@ -192,34 +178,37 @@ def handle_message(chat_id, text):
             send_message(chat_id, "🔒 لطفاً پسورد رو وارد کن:", get_password_keyboard())
         return
     
-    # ===== تولد =====
     if text == "🎂 تولد نسا":
         send_message(chat_id, BIRTHDAY_MESSAGE)
         return
     
-    # ===== روز آشنایی =====
     if text == "📅 روز آشنایی":
         days = get_days_since(24, 12, 1404)
         if days > 0:
-            hours = days * 24
-            send_message(chat_id, f"💞 **روز آشنایی ما:**\n\n۲۴ اسفند ۱۴۰۴\nالان {hours} ساعت می‌شود که قلبم برای تو می‌تپد... ❤️")
+            seconds = days * 24 * 60 * 60
+            quote = random.choice(SECOND_QUOTES)
+            send_message(chat_id, 
+                f"💞 **روز آشنایی ما:**\n\n"
+                f"۲۴ اسفند ۱۴۰۴، روزی که قلبم برای تو تپیدن را آغاز کرد.\n\n"
+                f"از آن روز تا امروز، دقیقاً **{seconds:,} ثانیه** می‌گذرد...\n"
+                f"و در تمام این ثانیه‌ها، قلبم فقط برای تو می‌تپد.\n\n"
+                f"📖 {quote}\n\n"
+                f"❤️ هر ثانیه‌اش، یک نفس عشق بود..."
+            )
         else:
             send_message(chat_id, "📅 روز آشنایی ما ۲۴ اسفند ۱۴۰۴ است.")
         return
     
-    # ===== ساعت تا تولدت =====
     if text == "⏳ ساعت تا تولدت":
         hours = hours_until_birthday()
         send_message(chat_id, f"🎂 تا تولد ahu goozlum، {hours:,} ساعت مونده... ❤️")
         return
     
-    # ===== بازگشت به منو =====
     if text == "🔙 بازگشت به منو":
         user_access[chat_id] = {"photos": user_access.get(chat_id, {}).get("photos", False), "waiting_for_password": False}
         send_message(chat_id, "به منوی اصلی برگشتی 🏠", get_main_keyboard())
         return
     
-    # ===== استارت =====
     if text == "/start":
         user_access[chat_id] = {"photos": False, "waiting_for_password": False}
         send_message(chat_id, 
@@ -234,9 +223,6 @@ def handle_message(chat_id, text):
     
     send_message(chat_id, "❌ دستور نامعتبر! لطفاً از دکمه‌ها استفاده کن.", get_main_keyboard())
 
-# ============================================================
-# ===== تایمر تولد =====
-# ============================================================
 def birthday_timer():
     while True:
         try:
@@ -257,9 +243,6 @@ def birthday_timer():
             print(f"Error in birthday_timer: {e}")
         time.sleep(60)
 
-# ============================================================
-# ===== Webhook و قلب =====
-# ============================================================
 @app.route('/', methods=['GET', 'POST'])
 def webhook():
     if request.method == 'POST':
@@ -331,11 +314,8 @@ def heart_page():
 </html>
     """)
 
-# ============================================================
-# ===== اجرای اصلی =====
-# ============================================================
 if __name__ == "__main__":
-    print("🚀 ربات ahu goozlum با ساعت تا تولد و تایمر ایران روشن شد...")
+    print("🚀 ربات ahu goozlum با ثانیه‌های عاشقانه روشن شد...")
     print(f"🔑 پسورد: {PASSWORD}")
     print(f"🎂 تولد: {BIRTH_DAY}/{BIRTH_MONTH} (۱۷ مرداد) ساعت {BIRTH_HOUR}:{BIRTH_MINUTE}")
     print(f"📸 تعداد عکس‌ها: {len(PHOTOS)}")
