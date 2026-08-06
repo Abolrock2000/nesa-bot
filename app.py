@@ -30,7 +30,7 @@ PASSWORD = "1386"
 user_access = {}
 
 # ============================================================
-# ===== عکس‌ها با لینک جدید شما =====
+# ===== عکس‌ها =====
 # ============================================================
 PHOTOS = {
     "📸 عکس ۱": {"path": "photos/IMG_20260801_224828_501.jpg", "caption": "🌹 عشق زندگیم... ❤️"},
@@ -39,7 +39,7 @@ PHOTOS = {
     "📸 عکس ۴": {"path": "photos/IMG_20260707_153249_974.jpg", "caption": "🌙 ماه شب‌های من..."},
     "📸 عکس ۵": {"path": "photos/IMG_20260709_234307_968.jpg", "caption": "☀️ روشن‌ترین روز من..."},
     "📸 عکس ۶": {"path": "photos/IMG_20260719_211523_837.jpg", "caption": "❤️ تمامِ دنیای من..."},
-    "📸 عکس ۷": {"path": "https://i.postimg.cc/5tDhyRgM/IMG-2I", "caption": "💖 عکس مخصوص... ❤️"},
+    "📸 عکس ۷": {"path": "https://i.postimg.cc/5tDhyRgM/IMG-20260318-184739-714.jpg", "caption": "💖 عکس مخصوص... ❤️"},
 }
 
 # ============================================================
@@ -68,7 +68,7 @@ PHOTO_MOSAIC_PAGE = """
         const cols = 90;
         const rows = 65;
 
-        const imageUrl = "https://i.postimg.cc/5tDhyRgM/IMG-2I";
+        const imageUrl = "https://i.postimg.cc/5tDhyRgM/IMG-20260318-184739-714.jpg";
 
         const canvas = document.getElementById('photoCanvas');
         const ctx = canvas.getContext('2d');
@@ -280,10 +280,7 @@ def send_message(chat_id, text, reply_markup=None):
     return False
 
 def send_photo(chat_id, photo_path, caption=""):
-    if not os.path.exists(photo_path) and not photo_path.startswith("http"):
-        send_message(chat_id, "❌ عکس پیدا نشد!")
-        return False
-    
+    # ===== ارسال از لینک اینترنتی =====
     if photo_path.startswith("http"):
         urls = [
             f"https://api.telegram.org/bot{TOKEN}/sendPhoto",
@@ -298,6 +295,12 @@ def send_photo(chat_id, photo_path, caption=""):
                     return True
             except:
                 continue
+        send_message(chat_id, "❌ ارسال عکس از لینک ناموفق بود!")
+        return False
+    
+    # ===== ارسال از فایل محلی =====
+    if not os.path.exists(photo_path):
+        send_message(chat_id, "❌ عکس پیدا نشد!")
         return False
     
     urls = [
@@ -339,7 +342,7 @@ def handle_message(chat_id, text):
             send_message(chat_id, "❌ پسورد اشتباه است! دوباره تلاش کن.", get_password_keyboard())
         return
     
-    if text in ["📸 عكس ۱", "📸 عكس ۲", "📸 عكس ۳", "📸 عكس ۴", "📸 عكس ۵", "📸 عكس ۶", "📸 عكس ۷"]:
+    if text in ["📸 عکس ۱", "📸 عکس ۲", "📸 عکس ۳", "📸 عکس ۴", "📸 عکس ۵", "📸 عکس ۶", "📸 عکس ۷"]:
         if user_access.get(chat_id, {}).get("photos", False):
             photo = PHOTOS.get(text)
             if photo:
