@@ -114,6 +114,139 @@ ahu goozlum,
 روح تنهای تو""",
 ]
 
+# ============================================================
+# ===== صفحه فتوموزاییک عشق (چهره‌ی نساء با i love you) =====
+# ============================================================
+PHOTO_MOSAIC_PAGE = """
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>❤️ I Love You - Ahu Goozlum ❤️</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            background: #0a0a0a;
+            overflow: hidden;
+        }
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: #0a0a0a;
+        }
+        canvas {
+            display: block;
+            max-width: 100vw;
+            max-height: 100vh;
+            width: auto;
+            height: auto;
+        }
+        .watermark {
+            position: fixed;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: #ff224488;
+            font-family: 'Arial', sans-serif;
+            font-size: 14px;
+            letter-spacing: 3px;
+            pointer-events: none;
+            z-index: 10;
+            text-shadow: 0 0 20px #ff2244;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="photoCanvas"></canvas>
+    <div class="watermark">❤️ ahu goozlum ❤️</div>
+    <script>
+        const text = "i love you";
+        const textSize = 12;
+        const cols = 90;
+        const rows = 65;
+
+        // ===== عکس نساء (لینک یا مسیر) =====
+        // می‌تونی از لینک عکس استفاده کنی یا از فایل داخل پروژه
+        const imageUrl = "/photos/IMG_20260801_224828_501.jpg";
+
+        const canvas = document.getElementById('photoCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const img = new Image();
+        img.crossOrigin = "Anonymous";
+        img.src = imageUrl;
+
+        img.onload = function() {
+            const imgWidth = img.width;
+            const imgHeight = img.height;
+            const aspectRatio = imgWidth / imgHeight;
+
+            let canvasWidth, canvasHeight;
+            if (aspectRatio > 1) {
+                canvasWidth = 800;
+                canvasHeight = 800 / aspectRatio;
+            } else {
+                canvasHeight = 600;
+                canvasWidth = 600 * aspectRatio;
+            }
+
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
+
+            ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
+            const imageData = ctx.getImageData(0, 0, canvasWidth, canvasHeight);
+            const data = imageData.data;
+
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+            ctx.fillStyle = '#0a0a0a';
+            ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+            const cellWidth = canvasWidth / cols;
+            const cellHeight = canvasHeight / rows;
+
+            for (let row = 0; row < rows; row++) {
+                for (let col = 0; col < cols; col++) {
+                    const x = col * cellWidth + cellWidth / 2;
+                    const y = row * cellHeight + cellHeight / 2;
+
+                    const px = Math.floor(x);
+                    const py = Math.floor(y);
+                    const idx = (py * canvasWidth + px) * 4;
+
+                    const r = data[idx] || 0;
+                    const g = data[idx + 1] || 0;
+                    const b = data[idx + 2] || 0;
+                    const brightness = (r + g + b) / 3;
+
+                    const fontSize = Math.max(5, (brightness / 255) * textSize);
+                    const color = `rgb(${r}, ${g}, ${b})`;
+
+                    ctx.font = `${fontSize}px Arial`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillStyle = color;
+                    ctx.fillText(text, x, y);
+                }
+            }
+        };
+
+        img.onerror = function() {
+            ctx.fillStyle = '#ff2244';
+            ctx.font = '20px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('❌ عکس پیدا نشد! لطفاً مسیر رو چک کن.', canvas.width/2, canvas.height/2);
+        };
+    </script>
+</body>
+</html>
+"""
+
 def get_main_keyboard():
     return {
         "keyboard": [
@@ -121,7 +254,7 @@ def get_main_keyboard():
             ["🎂 تولد نسا", "📅 روز آشنایی"],
             ["⏳ ساعت تا تولدت"],
             ["💌 نامه عشق"],
-            ["❤️ صفحه قلب"],
+            ["❤️ صفحه عشق"],
             ["🔙 بازگشت به منو"]
         ],
         "resize_keyboard": True
@@ -266,8 +399,8 @@ def handle_message(chat_id, text):
         send_message(chat_id, random.choice(LOVE_LETTERS))
         return
     
-    if text == "❤️ صفحه قلب":
-        send_message(chat_id, "❤️ برای دیدن صفحه قلب، لینک زیر رو باز کن:\nhttps://nesa-bot.onrender.com/heart")
+    if text == "❤️ صفحه عشق":
+        send_message(chat_id, "❤️ برای دیدن چهره‌ی تو با کلمات عشق، لینک زیر رو باز کن:\nhttps://nesa-bot.onrender.com/love")
         return
     
     if text == "🔙 بازگشت به منو":
@@ -283,7 +416,7 @@ def handle_message(chat_id, text):
             "🎂 تولدت رو هم می‌تونی ببینی.\n"
             "⏳ ساعت باقی‌مونده تا تولدت رو چک کن.\n"
             "💌 نامه‌های عاشقانه رو هم می‌تونی بخونی.\n"
-            "❤️ صفحه قلب: /heart",
+            "❤️ صفحه عشق: /love",
             get_main_keyboard()
         )
         return
@@ -323,70 +456,16 @@ def webhook():
             print(f"Error: {e}")
     return "OK", 200
 
-@app.route('/heart')
-def heart_page():
-    return render_template_string("""
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>❤️ I Love You - Ahu Goozlum ❤️</title>
-    <style>
-        * { margin: 0; padding: 0; background: #0a0a0a; overflow: hidden; }
-        body { display: flex; justify-content: center; align-items: center; height: 100vh; }
-        .heart-wrapper { position: relative; width: 500px; height: 470px; display: flex; justify-content: center; align-items: center; }
-        .heart-text { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-wrap: wrap; justify-content: center; align-content: center; gap: 2px; padding: 30px 20px; }
-        .word { color: #ff2244; font-family: 'Arial', sans-serif; font-size: 12px; font-weight: bold; text-shadow: 0 0 3px #ff2244, 0 0 8px #ff2244; animation: pulse 2s ease-in-out infinite alternate; user-select: none; white-space: nowrap; }
-        @keyframes pulse { 0% { opacity: 0.4; transform: scale(0.85); } 100% { opacity: 1; transform: scale(1.05); } }
-        .center-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #ff2244; font-family: 'Arial Black', sans-serif; font-size: 34px; font-weight: 900; text-shadow: 0 0 20px #ff2244, 0 0 40px #ff2244, 0 0 60px #ff4466, 0 0 80px #ff6688; z-index: 10; text-align: center; animation: centerPulse 1.5s ease-in-out infinite alternate; letter-spacing: 2px; background: transparent; pointer-events: none; }
-        .center-text span { display: block; font-size: 16px; color: #ff6699; font-family: 'Arial', sans-serif; font-weight: normal; text-shadow: 0 0 10px #ff6699, 0 0 20px #ff6699; margin-top: 5px; }
-        @keyframes centerPulse { 0% { transform: translate(-50%, -50%) scale(0.95); text-shadow: 0 0 20px #ff2244, 0 0 40px #ff2244; } 100% { transform: translate(-50%, -50%) scale(1.05); text-shadow: 0 0 30px #ff2244, 0 0 60px #ff4466, 0 0 80px #ff6688; } }
-        @media (max-width: 550px) { .heart-wrapper { width: 320px; height: 300px; } .word { font-size: 8px; } .center-text { font-size: 22px; } .center-text span { font-size: 12px; } }
-    </style>
-</head>
-<body>
-    <div class="heart-wrapper">
-        <div class="heart-text" id="heartText"></div>
-        <div class="center-text">❤️ ahu goozlum ❤️<span>i love you forever</span></div>
-    </div>
-    <script>
-        const container = document.getElementById('heartText');
-        const text = "i love you";
-        function isInsideHeart(x, y) {
-            const scale = 0.065;
-            const nx = x * scale;
-            const ny = y * scale;
-            const a = nx * nx + ny * ny - 1;
-            return a * a * a - nx * nx * ny * ny * ny <= 0;
-        }
-        const rows = 32, cols = 28;
-        for (let row = 0; row < rows; row++) {
-            for (let col = 0; col < cols; col++) {
-                const x = (col / cols) * 2 - 1;
-                const y = (row / rows) * 2 - 1;
-                if (isInsideHeart(x, y)) {
-                    const word = document.createElement('span');
-                    word.className = 'word';
-                    word.textContent = text;
-                    word.style.fontSize = `${9 + Math.random() * 6}px`;
-                    word.style.animationDelay = `${Math.random() * 3}s`;
-                    word.style.opacity = 0.5 + Math.random() * 0.5;
-                    container.appendChild(word);
-                }
-            }
-        }
-    </script>
-</body>
-</html>
-    """)
+@app.route('/love')
+def love_page():
+    return render_template_string(PHOTO_MOSAIC_PAGE)
 
 if __name__ == "__main__":
-    print("🚀 ربات ahu goozlum با تمام ویژگی‌ها روشن شد...")
+    print("🚀 ربات ahu goozlum با فتوموزاییک عشق روشن شد...")
     print(f"🔑 پسورد: {PASSWORD}")
     print(f"🎂 تولد: {BIRTH_DAY}/{BIRTH_MONTH} (۱۷ مرداد) ساعت {BIRTH_HOUR}:{BIRTH_MINUTE}")
     print(f"📸 تعداد عکس‌ها: {len(PHOTOS)}")
-    print("❤️ صفحه قلب در آدرس: /heart")
+    print("❤️ صفحه عشق در آدرس: /love")
     
     timer_thread = threading.Thread(target=birthday_timer, daemon=True)
     timer_thread.start()
