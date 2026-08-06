@@ -43,7 +43,7 @@ PHOTOS = {
 }
 
 # ============================================================
-# ===== صفحه سورپرایز تولد (جعبه کادو + پسورد + تبریک) =====
+# ===== صفحه سورپرایز تولد =====
 # ============================================================
 BIRTHDAY_SURPRISE_PAGE = """
 <!DOCTYPE html>
@@ -194,7 +194,7 @@ BIRTHDAY_SURPRISE_PAGE = """
             </div>
             <img src="https://i.postimg.cc/5tDhyRgM/IMG-20260318-184739-714.jpg" alt="Nesa" class="birthday-photo">
             <p style="color: #ff6699; margin-top: 15px; font-size: 14px;">
-                ❤️ این چهره‌ات، با کلمات <span style="color: #ff2244;">i love you nesa</span> ساخته شده...
+                ❤️ این چهره‌ات، با کلمات <span style="color: #ff2244;">I LOVE YOU NESA</span> ساخته شده...
             </p>
         </div>
     </div>
@@ -282,7 +282,7 @@ BIRTHDAY_SURPRISE_PAGE = """
 """
 
 # ============================================================
-# ===== صفحه فتوموزاییک =====
+# ===== صفحه فتوموزاییک جدید با کلمات I LOVE YOU NESA =====
 # ============================================================
 PHOTO_MOSAIC_PAGE = """
 <!DOCTYPE html>
@@ -302,78 +302,55 @@ PHOTO_MOSAIC_PAGE = """
     <canvas id="photoCanvas"></canvas>
     <div class="watermark">❤️ ahu goozlum ❤️</div>
     <script>
-        const text = "i love you nesa";
-        const textSize = 10;
-        const cols = 120;
-        const rows = 85;
         const imageUrl = "https://i.postimg.cc/5tDhyRgM/IMG-20260318-184739-714.jpg";
-        const canvas = document.getElementById('photoCanvas');
-        const ctx = canvas.getContext('2d');
+        const words = ["I", "LOVE", "YOU", "NESA"];
+
+        const canvas = document.getElementById("photoCanvas");
+        const ctx = canvas.getContext("2d");
+
         const img = new Image();
-        img.crossOrigin = "Anonymous";
+        img.crossOrigin = "anonymous";
         img.src = imageUrl;
-        img.onload = function() {
-            const imgWidth = img.width;
-            const imgHeight = img.height;
-            const aspectRatio = imgWidth / imgHeight;
-            let canvasWidth, canvasHeight;
-            if (aspectRatio > 1) {
-                canvasWidth = 1200;
-                canvasHeight = 1200 / aspectRatio;
-            } else {
-                canvasHeight = 900;
-                canvasWidth = 900 * aspectRatio;
-            }
-            canvas.width = canvasWidth;
-            canvas.height = canvasHeight;
-            ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
-            const imageData = ctx.getImageData(0, 0, canvasWidth, canvasHeight);
-            const data = imageData.data;
-            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-            ctx.fillStyle = '#0a0a0a';
-            ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-            const cellWidth = canvasWidth / cols;
-            const cellHeight = canvasHeight / rows;
-            const eyeYStart = canvasHeight * 0.28;
-            const eyeYEnd = canvasHeight * 0.48;
-            const eyeXStart = canvasWidth * 0.25;
-            const eyeXEnd = canvasWidth * 0.75;
-            for (let row = 0; row < rows; row++) {
-                for (let col = 0; col < cols; col++) {
-                    const x = col * cellWidth + cellWidth / 2;
-                    const y = row * cellHeight + cellHeight / 2;
-                    const px = Math.floor(x);
-                    const py = Math.floor(y);
-                    const idx = (py * canvasWidth + px) * 4;
-                    let r = data[idx] || 0;
-                    let g = data[idx + 1] || 0;
-                    let b = data[idx + 2] || 0;
-                    const brightness = (r + g + b) / 3;
-                    const isEye = (x > eyeXStart && x < eyeXEnd && y > eyeYStart && y < eyeYEnd && brightness < 120 && brightness > 30);
-                    let finalText = text;
-                    let color;
-                    let fontSize;
-                    if (isEye) {
-                        fontSize = 3;
-                        color = `rgba(255, 255, 255, 0.12)`;
-                        finalText = "👁️";
-                    } else if (brightness > 150) {
-                        fontSize = Math.max(4, (brightness / 255) * textSize);
-                        color = '#ffffff';
-                    } else {
-                        fontSize = Math.max(4, (brightness / 255) * textSize * 1.2);
-                        const redIntensity = Math.min(255, 150 + (255 - brightness) * 0.5);
-                        color = `rgb(${redIntensity}, 20, 30)`;
-                    }
-                    ctx.font = `${fontSize}px Arial`;
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    ctx.fillStyle = color;
-                    ctx.fillText(finalText, x, y);
+
+        img.onload = () => {
+            canvas.width = img.width;
+            canvas.height = img.height;
+
+            ctx.drawImage(img, 0, 0);
+
+            const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+
+            ctx.fillStyle = "#000";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.font = "7px Arial";
+
+            const step = 7;
+
+            for (let y = 0; y < canvas.height; y += step) {
+                for (let x = 0; x < canvas.width; x += step) {
+                    let index = (y * canvas.width + x) * 4;
+
+                    let r = pixels[index];
+                    let g = pixels[index + 1];
+                    let b = pixels[index + 2];
+
+                    let bright = (r + g + b) / 3;
+
+                    if (bright > 240) continue;
+
+                    ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+
+                    let word = words[(x + y) % words.length];
+
+                    ctx.fillText(word, x, y);
                 }
             }
         };
-        img.onerror = function() {
+
+        img.onerror = () => {
             ctx.fillStyle = '#ff2244';
             ctx.font = '20px Arial';
             ctx.textAlign = 'center';
@@ -704,7 +681,7 @@ def birthday_surprise():
     return render_template_string(BIRTHDAY_SURPRISE_PAGE)
 
 if __name__ == "__main__":
-    print("🚀 ربات ahu goozlum با سورپرایز تولد روشن شد...")
+    print("🚀 ربات ahu goozlum با فتوموزاییک جدید روشن شد...")
     print(f"🔑 پسورد: {PASSWORD}")
     print(f"🎂 تولد: {BIRTH_DAY}/{BIRTH_MONTH} (۱۷ مرداد) ساعت {BIRTH_HOUR}:{BIRTH_MINUTE}")
     print(f"📸 تعداد عکس‌ها: {len(PHOTOS)}")
