@@ -39,11 +39,11 @@ PHOTOS = {
     "📸 عکس ۴": {"path": "photos/IMG_20260707_153249_974.jpg", "caption": "🌙 ماه شب‌های من..."},
     "📸 عکس ۵": {"path": "photos/IMG_20260709_234307_968.jpg", "caption": "☀️ روشن‌ترین روز من..."},
     "📸 عکس ۶": {"path": "photos/IMG_20260719_211523_837.jpg", "caption": "❤️ تمامِ دنیای من..."},
-    "📸 عکس ７": {"path": "https://i.postimg.cc/5tDhyRgM/IMG-20260318-184739-714.jpg", "caption": "💖 عکس مخصوص... ❤️"},
+    "📸 عکس ۷": {"path": "https://i.postimg.cc/5tDhyRgM/IMG-20260318-184739-714.jpg", "caption": "💖 عکس مخصوص... ❤️"},
 }
 
 # ============================================================
-# ===== صفحه فتوموزاییک با کیفیت بالا و عبارت i love you nesa =====
+# ===== صفحه فتوموزاییک با سفید/قرمز و چشم‌های مشخص =====
 # ============================================================
 PHOTO_MOSAIC_PAGE = """
 <!DOCTYPE html>
@@ -63,7 +63,6 @@ PHOTO_MOSAIC_PAGE = """
     <canvas id="photoCanvas"></canvas>
     <div class="watermark">❤️ ahu goozlum ❤️</div>
     <script>
-        // ===== تنظیمات کیفیت بالا =====
         const text = "i love you nesa";
         const textSize = 10;
         const cols = 120;
@@ -106,8 +105,11 @@ PHOTO_MOSAIC_PAGE = """
             const cellWidth = canvasWidth / cols;
             const cellHeight = canvasHeight / rows;
 
-            const contrast = 1.3;
-            const brightness = 20;
+            // ===== محدوده چشم‌ها (قابل تنظیم) =====
+            const eyeYStart = canvasHeight * 0.28;
+            const eyeYEnd = canvasHeight * 0.48;
+            const eyeXStart = canvasWidth * 0.25;
+            const eyeXEnd = canvasWidth * 0.75;
 
             for (let row = 0; row < rows; row++) {
                 for (let col = 0; col < cols; col++) {
@@ -122,19 +124,38 @@ PHOTO_MOSAIC_PAGE = """
                     let g = data[idx + 1] || 0;
                     let b = data[idx + 2] || 0;
 
-                    r = Math.min(255, Math.max(0, (r - 128) * contrast + 128 + brightness));
-                    g = Math.min(255, Math.max(0, (g - 128) * contrast + 128 + brightness));
-                    b = Math.min(255, Math.max(0, (b - 128) * contrast + 128 + brightness));
+                    const brightness = (r + g + b) / 3;
 
-                    const brightnessVal = (r + g + b) / 3;
-                    const fontSize = Math.max(4, (brightnessVal / 255) * textSize);
-                    const color = `rgb(${r}, ${g}, ${b})`;
+                    // ===== تشخیص چشم‌ها =====
+                    const isEye = (x > eyeXStart && x < eyeXEnd && 
+                                   y > eyeYStart && y < eyeYEnd && 
+                                   brightness < 120 && brightness > 30);
+
+                    let finalText = text;
+                    let color;
+                    let fontSize;
+
+                    if (isEye) {
+                        // ===== چشم‌ها: خیلی کم‌رنگ =====
+                        fontSize = 3;
+                        color = `rgba(255, 255, 255, 0.12)`;
+                        finalText = "👁️";
+                    } else if (brightness > 150) {
+                        // ===== نقاط روشن: سفید =====
+                        fontSize = Math.max(4, (brightness / 255) * textSize);
+                        color = '#ffffff';
+                    } else {
+                        // ===== نقاط تاریک: قرمز =====
+                        fontSize = Math.max(4, (brightness / 255) * textSize * 1.2);
+                        const redIntensity = Math.min(255, 150 + (255 - brightness) * 0.5);
+                        color = `rgb(${redIntensity}, 20, 30)`;
+                    }
 
                     ctx.font = `${fontSize}px Arial`;
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
                     ctx.fillStyle = color;
-                    ctx.fillText(text, x, y);
+                    ctx.fillText(finalText, x, y);
                 }
             }
         };
@@ -460,7 +481,7 @@ def love_page():
     return render_template_string(PHOTO_MOSAIC_PAGE)
 
 if __name__ == "__main__":
-    print("🚀 ربات ahu goozlum با کیفیت بالا و عبارت i love you nesa روشن شد...")
+    print("🚀 ربات ahu goozlum با فتوموزاییک سفید/قرمز روشن شد...")
     print(f"🔑 پسورد: {PASSWORD}")
     print(f"🎂 تولد: {BIRTH_DAY}/{BIRTH_MONTH} (۱۷ مرداد) ساعت {BIRTH_HOUR}:{BIRTH_MINUTE}")
     print(f"📸 تعداد عکس‌ها: {len(PHOTOS)}")
