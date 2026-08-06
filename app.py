@@ -39,11 +39,11 @@ PHOTOS = {
     "📸 عکس ۴": {"path": "photos/IMG_20260707_153249_974.jpg", "caption": "🌙 ماه شب‌های من..."},
     "📸 عکس ۵": {"path": "photos/IMG_20260709_234307_968.jpg", "caption": "☀️ روشن‌ترین روز من..."},
     "📸 عکس ۶": {"path": "photos/IMG_20260719_211523_837.jpg", "caption": "❤️ تمامِ دنیای من..."},
-    "📸 عکس ۷": {"path": "https://i.postimg.cc/5tDhyRgM/IMG-20260318-184739-714.jpg", "caption": "💖 عکس مخصوص... ❤️"},
+    "📸 عکس ７": {"path": "https://i.postimg.cc/5tDhyRgM/IMG-20260318-184739-714.jpg", "caption": "💖 عکس مخصوص... ❤️"},
 }
 
 # ============================================================
-# ===== صفحه فتوموزاییک =====
+# ===== صفحه فتوموزاییک با کیفیت بالا و عبارت i love you nesa =====
 # ============================================================
 PHOTO_MOSAIC_PAGE = """
 <!DOCTYPE html>
@@ -51,7 +51,7 @@ PHOTO_MOSAIC_PAGE = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>❤️ I Love You - Ahu Goozlum ❤️</title>
+    <title>❤️ I Love You Nesa - Ahu Goozlum ❤️</title>
     <style>
         * { margin: 0; padding: 0; background: #0a0a0a; overflow: hidden; }
         body { display: flex; justify-content: center; align-items: center; height: 100vh; }
@@ -63,10 +63,11 @@ PHOTO_MOSAIC_PAGE = """
     <canvas id="photoCanvas"></canvas>
     <div class="watermark">❤️ ahu goozlum ❤️</div>
     <script>
-        const text = "i love you";
-        const textSize = 12;
-        const cols = 90;
-        const rows = 65;
+        // ===== تنظیمات کیفیت بالا =====
+        const text = "i love you nesa";
+        const textSize = 10;
+        const cols = 120;
+        const rows = 85;
 
         const imageUrl = "https://i.postimg.cc/5tDhyRgM/IMG-20260318-184739-714.jpg";
 
@@ -84,11 +85,11 @@ PHOTO_MOSAIC_PAGE = """
 
             let canvasWidth, canvasHeight;
             if (aspectRatio > 1) {
-                canvasWidth = 800;
-                canvasHeight = 800 / aspectRatio;
+                canvasWidth = 1200;
+                canvasHeight = 1200 / aspectRatio;
             } else {
-                canvasHeight = 600;
-                canvasWidth = 600 * aspectRatio;
+                canvasHeight = 900;
+                canvasWidth = 900 * aspectRatio;
             }
 
             canvas.width = canvasWidth;
@@ -105,6 +106,9 @@ PHOTO_MOSAIC_PAGE = """
             const cellWidth = canvasWidth / cols;
             const cellHeight = canvasHeight / rows;
 
+            const contrast = 1.3;
+            const brightness = 20;
+
             for (let row = 0; row < rows; row++) {
                 for (let col = 0; col < cols; col++) {
                     const x = col * cellWidth + cellWidth / 2;
@@ -114,12 +118,16 @@ PHOTO_MOSAIC_PAGE = """
                     const py = Math.floor(y);
                     const idx = (py * canvasWidth + px) * 4;
 
-                    const r = data[idx] || 0;
-                    const g = data[idx + 1] || 0;
-                    const b = data[idx + 2] || 0;
-                    const brightness = (r + g + b) / 3;
+                    let r = data[idx] || 0;
+                    let g = data[idx + 1] || 0;
+                    let b = data[idx + 2] || 0;
 
-                    const fontSize = Math.max(5, (brightness / 255) * textSize);
+                    r = Math.min(255, Math.max(0, (r - 128) * contrast + 128 + brightness));
+                    g = Math.min(255, Math.max(0, (g - 128) * contrast + 128 + brightness));
+                    b = Math.min(255, Math.max(0, (b - 128) * contrast + 128 + brightness));
+
+                    const brightnessVal = (r + g + b) / 3;
+                    const fontSize = Math.max(4, (brightnessVal / 255) * textSize);
                     const color = `rgb(${r}, ${g}, ${b})`;
 
                     ctx.font = `${fontSize}px Arial`;
@@ -280,7 +288,6 @@ def send_message(chat_id, text, reply_markup=None):
     return False
 
 def send_photo(chat_id, photo_path, caption=""):
-    # ===== ارسال از لینک اینترنتی =====
     if photo_path.startswith("http"):
         urls = [
             f"https://api.telegram.org/bot{TOKEN}/sendPhoto",
@@ -298,7 +305,6 @@ def send_photo(chat_id, photo_path, caption=""):
         send_message(chat_id, "❌ ارسال عکس از لینک ناموفق بود!")
         return False
     
-    # ===== ارسال از فایل محلی =====
     if not os.path.exists(photo_path):
         send_message(chat_id, "❌ عکس پیدا نشد!")
         return False
@@ -454,7 +460,7 @@ def love_page():
     return render_template_string(PHOTO_MOSAIC_PAGE)
 
 if __name__ == "__main__":
-    print("🚀 ربات ahu goozlum با لینک جدید روشن شد...")
+    print("🚀 ربات ahu goozlum با کیفیت بالا و عبارت i love you nesa روشن شد...")
     print(f"🔑 پسورد: {PASSWORD}")
     print(f"🎂 تولد: {BIRTH_DAY}/{BIRTH_MONTH} (۱۷ مرداد) ساعت {BIRTH_HOUR}:{BIRTH_MINUTE}")
     print(f"📸 تعداد عکس‌ها: {len(PHOTOS)}")
