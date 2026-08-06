@@ -29,6 +29,9 @@ PASSWORD = "1386"
 
 user_access = {}
 
+# ============================================================
+# ===== عکس‌ها با لینک جدید شما =====
+# ============================================================
 PHOTOS = {
     "📸 عکس ۱": {"path": "photos/IMG_20260801_224828_501.jpg", "caption": "🌹 عشق زندگیم... ❤️"},
     "📸 عکس ۲": {"path": "photos/null_14041109_222510829.jpg", "caption": "💫 قلب من... تو هستی"},
@@ -36,7 +39,109 @@ PHOTOS = {
     "📸 عکس ۴": {"path": "photos/IMG_20260707_153249_974.jpg", "caption": "🌙 ماه شب‌های من..."},
     "📸 عکس ۵": {"path": "photos/IMG_20260709_234307_968.jpg", "caption": "☀️ روشن‌ترین روز من..."},
     "📸 عکس ۶": {"path": "photos/IMG_20260719_211523_837.jpg", "caption": "❤️ تمامِ دنیای من..."},
+    "📸 عکس ۷": {"path": "https://i.postimg.cc/5tDhyRgM/IMG-2I", "caption": "💖 عکس مخصوص... ❤️"},
 }
+
+# ============================================================
+# ===== صفحه فتوموزاییک =====
+# ============================================================
+PHOTO_MOSAIC_PAGE = """
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>❤️ I Love You - Ahu Goozlum ❤️</title>
+    <style>
+        * { margin: 0; padding: 0; background: #0a0a0a; overflow: hidden; }
+        body { display: flex; justify-content: center; align-items: center; height: 100vh; }
+        canvas { display: block; max-width: 100vw; max-height: 100vh; width: auto; height: auto; }
+        .watermark { position: fixed; bottom: 20px; left: 0; right: 0; text-align: center; color: #ff224488; font-family: 'Arial', sans-serif; font-size: 14px; letter-spacing: 3px; pointer-events: none; z-index: 10; text-shadow: 0 0 20px #ff2244; }
+    </style>
+</head>
+<body>
+    <canvas id="photoCanvas"></canvas>
+    <div class="watermark">❤️ ahu goozlum ❤️</div>
+    <script>
+        const text = "i love you";
+        const textSize = 12;
+        const cols = 90;
+        const rows = 65;
+
+        const imageUrl = "https://i.postimg.cc/5tDhyRgM/IMG-2I";
+
+        const canvas = document.getElementById('photoCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const img = new Image();
+        img.crossOrigin = "Anonymous";
+        img.src = imageUrl;
+
+        img.onload = function() {
+            const imgWidth = img.width;
+            const imgHeight = img.height;
+            const aspectRatio = imgWidth / imgHeight;
+
+            let canvasWidth, canvasHeight;
+            if (aspectRatio > 1) {
+                canvasWidth = 800;
+                canvasHeight = 800 / aspectRatio;
+            } else {
+                canvasHeight = 600;
+                canvasWidth = 600 * aspectRatio;
+            }
+
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
+
+            ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
+            const imageData = ctx.getImageData(0, 0, canvasWidth, canvasHeight);
+            const data = imageData.data;
+
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+            ctx.fillStyle = '#0a0a0a';
+            ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+            const cellWidth = canvasWidth / cols;
+            const cellHeight = canvasHeight / rows;
+
+            for (let row = 0; row < rows; row++) {
+                for (let col = 0; col < cols; col++) {
+                    const x = col * cellWidth + cellWidth / 2;
+                    const y = row * cellHeight + cellHeight / 2;
+
+                    const px = Math.floor(x);
+                    const py = Math.floor(y);
+                    const idx = (py * canvasWidth + px) * 4;
+
+                    const r = data[idx] || 0;
+                    const g = data[idx + 1] || 0;
+                    const b = data[idx + 2] || 0;
+                    const brightness = (r + g + b) / 3;
+
+                    const fontSize = Math.max(5, (brightness / 255) * textSize);
+                    const color = `rgb(${r}, ${g}, ${b})`;
+
+                    ctx.font = `${fontSize}px Arial`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillStyle = color;
+                    ctx.fillText(text, x, y);
+                }
+            }
+        };
+
+        img.onerror = function() {
+            ctx.fillStyle = '#ff2244';
+            ctx.font = '20px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('❌ عکس پیدا نشد! لینک رو چک کن.', canvas.width/2, canvas.height/2);
+        };
+    </script>
+</body>
+</html>
+"""
 
 BIRTHDAY_MESSAGE = """🎂 **تولدت مبارک، ahu goozlum...** 🎂
 
@@ -114,139 +219,6 @@ ahu goozlum,
 روح تنهای تو""",
 ]
 
-# ============================================================
-# ===== صفحه فتوموزاییک عشق (چهره‌ی نساء با i love you) =====
-# ============================================================
-PHOTO_MOSAIC_PAGE = """
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>❤️ I Love You - Ahu Goozlum ❤️</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            background: #0a0a0a;
-            overflow: hidden;
-        }
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background: #0a0a0a;
-        }
-        canvas {
-            display: block;
-            max-width: 100vw;
-            max-height: 100vh;
-            width: auto;
-            height: auto;
-        }
-        .watermark {
-            position: fixed;
-            bottom: 20px;
-            left: 0;
-            right: 0;
-            text-align: center;
-            color: #ff224488;
-            font-family: 'Arial', sans-serif;
-            font-size: 14px;
-            letter-spacing: 3px;
-            pointer-events: none;
-            z-index: 10;
-            text-shadow: 0 0 20px #ff2244;
-        }
-    </style>
-</head>
-<body>
-    <canvas id="photoCanvas"></canvas>
-    <div class="watermark">❤️ ahu goozlum ❤️</div>
-    <script>
-        const text = "i love you";
-        const textSize = 12;
-        const cols = 90;
-        const rows = 65;
-
-        // ===== عکس نساء (لینک یا مسیر) =====
-        // می‌تونی از لینک عکس استفاده کنی یا از فایل داخل پروژه
-        const imageUrl = "/photos/IMG_20260801_224828_501.jpg";
-
-        const canvas = document.getElementById('photoCanvas');
-        const ctx = canvas.getContext('2d');
-
-        const img = new Image();
-        img.crossOrigin = "Anonymous";
-        img.src = imageUrl;
-
-        img.onload = function() {
-            const imgWidth = img.width;
-            const imgHeight = img.height;
-            const aspectRatio = imgWidth / imgHeight;
-
-            let canvasWidth, canvasHeight;
-            if (aspectRatio > 1) {
-                canvasWidth = 800;
-                canvasHeight = 800 / aspectRatio;
-            } else {
-                canvasHeight = 600;
-                canvasWidth = 600 * aspectRatio;
-            }
-
-            canvas.width = canvasWidth;
-            canvas.height = canvasHeight;
-
-            ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
-            const imageData = ctx.getImageData(0, 0, canvasWidth, canvasHeight);
-            const data = imageData.data;
-
-            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-            ctx.fillStyle = '#0a0a0a';
-            ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-
-            const cellWidth = canvasWidth / cols;
-            const cellHeight = canvasHeight / rows;
-
-            for (let row = 0; row < rows; row++) {
-                for (let col = 0; col < cols; col++) {
-                    const x = col * cellWidth + cellWidth / 2;
-                    const y = row * cellHeight + cellHeight / 2;
-
-                    const px = Math.floor(x);
-                    const py = Math.floor(y);
-                    const idx = (py * canvasWidth + px) * 4;
-
-                    const r = data[idx] || 0;
-                    const g = data[idx + 1] || 0;
-                    const b = data[idx + 2] || 0;
-                    const brightness = (r + g + b) / 3;
-
-                    const fontSize = Math.max(5, (brightness / 255) * textSize);
-                    const color = `rgb(${r}, ${g}, ${b})`;
-
-                    ctx.font = `${fontSize}px Arial`;
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    ctx.fillStyle = color;
-                    ctx.fillText(text, x, y);
-                }
-            }
-        };
-
-        img.onerror = function() {
-            ctx.fillStyle = '#ff2244';
-            ctx.font = '20px Arial';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('❌ عکس پیدا نشد! لطفاً مسیر رو چک کن.', canvas.width/2, canvas.height/2);
-        };
-    </script>
-</body>
-</html>
-"""
-
 def get_main_keyboard():
     return {
         "keyboard": [
@@ -265,6 +237,7 @@ def get_photo_keyboard():
         "keyboard": [
             ["📸 عکس ۱", "📸 عکس ۲", "📸 عکس ۳"],
             ["📸 عکس ۴", "📸 عکس ۵", "📸 عکس ۶"],
+            ["📸 عکس ۷"],
             ["🔙 بازگشت به منو"]
         ],
         "resize_keyboard": True
@@ -307,9 +280,26 @@ def send_message(chat_id, text, reply_markup=None):
     return False
 
 def send_photo(chat_id, photo_path, caption=""):
-    if not os.path.exists(photo_path):
+    if not os.path.exists(photo_path) and not photo_path.startswith("http"):
         send_message(chat_id, "❌ عکس پیدا نشد!")
         return False
+    
+    if photo_path.startswith("http"):
+        urls = [
+            f"https://api.telegram.org/bot{TOKEN}/sendPhoto",
+            f"https://telegram.dog/bot{TOKEN}/sendPhoto",
+            f"https://tg.i-c-a.com/bot{TOKEN}/sendPhoto",
+        ]
+        for url in urls:
+            try:
+                payload = {"chat_id": chat_id, "photo": photo_path, "caption": caption}
+                r = requests.post(url, data=payload, timeout=20)
+                if r.status_code == 200:
+                    return True
+            except:
+                continue
+        return False
+    
     urls = [
         f"https://api.telegram.org/bot{TOKEN}/sendPhoto",
         f"https://telegram.dog/bot{TOKEN}/sendPhoto",
@@ -349,7 +339,7 @@ def handle_message(chat_id, text):
             send_message(chat_id, "❌ پسورد اشتباه است! دوباره تلاش کن.", get_password_keyboard())
         return
     
-    if text in ["📸 عکس ۱", "📸 عکس ۲", "📸 عکس ۳", "📸 عکس ۴", "📸 عکس ۵", "📸 عکس ۶"]:
+    if text in ["📸 عكس ۱", "📸 عكس ۲", "📸 عكس ۳", "📸 عكس ۴", "📸 عكس ۵", "📸 عكس ۶", "📸 عكس ۷"]:
         if user_access.get(chat_id, {}).get("photos", False):
             photo = PHOTOS.get(text)
             if photo:
@@ -461,7 +451,7 @@ def love_page():
     return render_template_string(PHOTO_MOSAIC_PAGE)
 
 if __name__ == "__main__":
-    print("🚀 ربات ahu goozlum با فتوموزاییک عشق روشن شد...")
+    print("🚀 ربات ahu goozlum با لینک جدید روشن شد...")
     print(f"🔑 پسورد: {PASSWORD}")
     print(f"🎂 تولد: {BIRTH_DAY}/{BIRTH_MONTH} (۱۷ مرداد) ساعت {BIRTH_HOUR}:{BIRTH_MINUTE}")
     print(f"📸 تعداد عکس‌ها: {len(PHOTOS)}")
