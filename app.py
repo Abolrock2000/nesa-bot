@@ -43,239 +43,342 @@ PHOTOS = {
 }
 
 # ============================================================
-# ===== صفحه سورپرایز تولد =====
+# ===== صفحه سورپرایز تولد (جدید) =====
 # ============================================================
 BIRTHDAY_SURPRISE_PAGE = """
 <!DOCTYPE html>
-<html>
+<html lang="fa">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎉 تبریک برای عشقم - Ahu Goozlum ❤️</title>
+    <title>🎂 تولدت مبارک عشقم ❤️</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            background: #0a0a0a;
+            background: radial-gradient(circle at 50% 20%, #35101d 0%, #12070c 45%, #050505 100%);
+            min-height: 100vh;
+            overflow: hidden;
+            font-family: Tahoma, Arial, sans-serif;
+            color: white;
+        }
+        .page {
+            width: 100%;
+            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            font-family: 'Arial', sans-serif;
-            overflow: hidden;
-            flex-direction: column;
+            position: relative;
+            z-index: 5;
         }
         .container {
+            width: 92%;
+            max-width: 520px;
             text-align: center;
-            padding: 20px;
-            max-width: 500px;
-            width: 100%;
         }
-        #giftBox { cursor: pointer; transition: transform 0.5s; animation: float 3s ease-in-out infinite; }
-        #giftBox:hover { transform: scale(1.05); }
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-15px); }
+        #giftPage { animation: pageIn 1.2s ease; }
+        .gift-wrapper {
+            cursor: pointer;
+            animation: floating 3s ease-in-out infinite;
         }
-        .gift-img {
-            width: 280px;
-            height: auto;
-            filter: drop-shadow(0 0 30px #ff224466);
-            transition: all 0.5s;
+        .gift {
+            font-size: 130px;
+            filter: drop-shadow(0 0 15px #ff1744) drop-shadow(0 0 45px #ff174477);
+            transition: .4s;
         }
-        #passwordPage { display: none; animation: fadeIn 0.8s; }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: scale(0.9); }
+        .gift-wrapper:hover .gift {
+            transform: scale(1.12) rotate(-3deg);
+        }
+        .gift-title {
+            margin-top: 20px;
+            color: #ff9db5;
+            font-size: 19px;
+            text-shadow: 0 0 15px #ff1744;
+        }
+        .tap {
+            margin-top: 10px;
+            color: #fff;
+            opacity: .7;
+            font-size: 13px;
+        }
+        @keyframes floating {
+            0%,100% { transform: translateY(0); }
+            50% { transform: translateY(-18px); }
+        }
+        @keyframes pageIn {
+            from { opacity: 0; transform: scale(.8); }
             to { opacity: 1; transform: scale(1); }
         }
+        #passwordPage, #birthdayPage { display: none; }
         .password-box {
-            background: #1a1a1a;
-            padding: 40px 30px;
-            border-radius: 20px;
-            border: 2px solid #ff224488;
-            box-shadow: 0 0 50px #ff224422;
+            background: rgba(30, 8, 15, .88);
+            backdrop-filter: blur(15px);
+            padding: 35px 25px;
+            border-radius: 28px;
+            border: 1px solid #ff4164;
+            box-shadow: 0 0 30px #ff174433, inset 0 0 30px #ff174411;
+            animation: pageIn 1s ease;
         }
-        .password-box h2 { color: #ff2244; font-size: 22px; margin-bottom: 15px; text-shadow: 0 0 20px #ff2244; }
-        .password-box p { color: #ff6699; font-size: 14px; margin-bottom: 20px; }
+        .password-box h2 {
+            color: #ff4d6d;
+            font-size: 25px;
+            margin-bottom: 12px;
+            text-shadow: 0 0 20px #ff1744;
+        }
+        .password-box p {
+            color: #ffb3c1;
+            margin-bottom: 22px;
+        }
         .password-box input {
             width: 100%;
-            padding: 14px;
-            background: #0a0a0a;
-            border: 2px solid #ff224466;
-            border-radius: 12px;
-            color: #fff;
-            font-size: 18px;
+            padding: 15px;
+            border-radius: 15px;
+            border: 1px solid #ff4164;
+            background: #080808;
+            color: white;
             text-align: center;
+            font-size: 20px;
             outline: none;
-            transition: 0.3s;
         }
-        .password-box input:focus { border-color: #ff2244; box-shadow: 0 0 20px #ff224466; }
+        .password-box input:focus {
+            box-shadow: 0 0 25px #ff174466;
+        }
         .password-box button {
-            margin-top: 20px;
+            margin-top: 18px;
             padding: 14px 40px;
-            background: linear-gradient(45deg, #ff2244, #ff4466);
             border: none;
             border-radius: 30px;
-            color: #fff;
+            background: linear-gradient(45deg,#ff1744,#ff4d6d,#ff8fa3);
+            color: white;
             font-size: 18px;
             font-weight: bold;
             cursor: pointer;
-            transition: 0.3s;
-            box-shadow: 0 0 30px #ff224466;
+            box-shadow: 0 0 25px #ff174466;
         }
-        .password-box button:hover { transform: scale(1.05); box-shadow: 0 0 50px #ff224488; }
-        .error-msg { color: #ff2244; margin-top: 12px; font-size: 14px; display: none; }
-        #birthdayPage { display: none; animation: fadeIn 1.2s; }
+        .error-msg {
+            display: none;
+            color: #ff526f;
+            margin-top: 15px;
+        }
         .birthday-content {
-            background: #1a1a1a;
-            padding: 30px 20px;
-            border-radius: 20px;
-            border: 2px solid #ff224488;
-            box-shadow: 0 0 60px #ff224422;
+            position: relative;
+            background: rgba(25, 6, 13, .86);
+            backdrop-filter: blur(12px);
+            padding: 28px 20px;
+            border-radius: 30px;
+            border: 1px solid #ff4164;
+            box-shadow: 0 0 50px #ff174433, inset 0 0 40px #ff174411;
+            animation: birthdayIn 1.5s ease;
+            max-height: 92vh;
+            overflow-y: auto;
         }
-        .birthday-content h1 { color: #ff2244; font-size: 28px; text-shadow: 0 0 30px #ff2244; margin-bottom: 10px; }
-        .birthday-content .message { color: #ff6699; font-size: 16px; line-height: 1.8; margin: 15px 0; }
-        .birthday-content .message span { color: #ff2244; font-weight: bold; }
+        @keyframes birthdayIn {
+            from { opacity: 0; transform: scale(.6) translateY(40px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .birthday-content h1 {
+            color: #ff5575;
+            font-size: 29px;
+            margin-bottom: 15px;
+            text-shadow: 0 0 10px #ff1744, 0 0 30px #ff1744;
+        }
+        .message {
+            color: #ffd5df;
+            font-size: 16px;
+            line-height: 2;
+        }
+        .message .special {
+            color: #ff6b89;
+            font-weight: bold;
+            text-shadow: 0 0 12px #ff1744;
+        }
         .birthday-photo {
             width: 100%;
             max-width: 350px;
-            border-radius: 16px;
-            margin: 15px auto;
+            margin: 20px auto;
             display: block;
-            border: 3px solid #ff224466;
-            box-shadow: 0 0 40px #ff224422;
+            border-radius: 22px;
+            border: 2px solid #ff5575;
+            box-shadow: 0 0 25px #ff174455, 0 0 60px #ff174422;
+            animation: photoGlow 3s ease-in-out infinite;
         }
-        .heart-rain { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 999; }
-        .heart-rain span {
+        @keyframes photoGlow {
+            0%,100% { box-shadow: 0 0 25px #ff174455; }
+            50% { box-shadow: 0 0 45px #ff174488; }
+        }
+        .love-text {
+            color: #ff9db5;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        .falling-container {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 20;
+        }
+        .falling {
             position: absolute;
-            font-size: 24px;
-            animation: fall linear infinite;
-            opacity: 0.8;
+            top: -100px;
+            animation-name: fallingDown;
+            animation-timing-function: linear;
+            animation-iteration-count: infinite;
+            user-select: none;
         }
-        @keyframes fall {
-            0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
-            100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+        @keyframes fallingDown {
+            0% { transform: translateY(-120px) rotate(0deg) translateX(0); opacity: 0; }
+            10% { opacity: 1; }
+            50% { transform: translateY(55vh) rotate(180deg) translateX(35px); }
+            100% { transform: translateY(115vh) rotate(360deg) translateX(-35px); opacity: 0; }
         }
-        @media (max-width: 500px) {
-            .gift-img { width: 200px; }
-            .password-box { padding: 25px 20px; }
-            .birthday-content h1 { font-size: 22px; }
+        .sparkles {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 1;
+        }
+        .sparkle {
+            position: absolute;
+            color: #ffd86b;
+            animation: sparkle 2s ease-in-out infinite;
+        }
+        @keyframes sparkle {
+            0%,100% { opacity: .1; transform: scale(.5); }
+            50% { opacity: 1; transform: scale(1.4); }
+        }
+        @media(max-width:600px) {
+            .gift { font-size: 100px; }
+            .birthday-content { padding: 24px 16px; }
+            .birthday-content h1 { font-size: 23px; }
+            .message { font-size: 14px; line-height: 1.9; }
         }
     </style>
 </head>
 <body>
 
-    <div class="container" id="giftPage">
-        <div id="giftBox" onclick="showPassword()">
-            <img src="https://cdn-icons-png.flaticon.com/512/1068/1068649.png" alt="🎁" class="gift-img">
-            <p style="color: #ff6699; margin-top: 15px; font-size: 18px; letter-spacing: 2px;">❤️ برای باز کردن، کلیک کن...</p>
-        </div>
-    </div>
-
-    <div class="container" id="passwordPage">
-        <div class="password-box">
-            <h2>🔒 کد مخصوص</h2>
-            <p>تاریخ تولد عشقم رو وارد کن...</p>
-            <input type="password" id="passwordInput" placeholder="مثلاً 1386" maxlength="10">
-            <button onclick="checkPassword()">🎉 تبریک</button>
-            <div class="error-msg" id="errorMsg">❌ کد اشتباه است! دوباره تلاش کن.</div>
-        </div>
-    </div>
-
-    <div class="container" id="birthdayPage">
-        <div class="birthday-content">
-            <h1>🎉 تبریک برای عشقم! ❤️</h1>
-            <div class="message">
-                امروز روزی است که زمین یک ستاره‌ی تازه پیدا کرد.<br>
-                روزی که آسمان، زیباترین فرشته‌اش را به زمین فرستاد.<br><br>
-                <span>🍃 تولدت مبارک، ای زیباترین فصل زندگی من...</span><br>
-                ❤️ من که همیشه در کنار توام، امروز بیشتر از همیشه دوستت دارم.<br><br>
-                🌹 عشق من، تمام هستی من... همیشه مال منی.<br>
-                💫 به امید سال‌هایی پر از عشق، لبخند و آرامش...
+    <div class="page" id="giftPage">
+        <div class="container">
+            <div class="gift-wrapper" onclick="showPassword()">
+                <div class="gift">🎁</div>
+                <div class="gift-title">❤️ یک سورپرایز برای عشقم ❤️</div>
+                <div class="tap">برای باز کردن هدیه لمس کن...</div>
             </div>
-            <img src="https://i.postimg.cc/5tDhyRgM/IMG-20260318-184739-714.jpg" alt="Nesa" class="birthday-photo">
-            <p style="color: #ff6699; margin-top: 15px; font-size: 14px;">
-                ❤️ این چهره‌ات، با کلمات <span style="color: #ff2244;">I LOVE YOU NESA</span> ساخته شده...
-            </p>
         </div>
     </div>
 
-    <div class="heart-rain" id="heartRain"></div>
+    <div class="page" id="passwordPage">
+        <div class="container">
+            <div class="password-box">
+                <h2>🔐 کد مخصوص تو</h2>
+                <p>فقط کسی که این هدیه برای اوست رمز را می‌داند... ❤️</p>
+                <input type="password" id="passwordInput" placeholder="رمز تولد..." maxlength="10">
+                <button onclick="checkPassword()">🎂 باز کردن سورپرایز</button>
+                <div class="error-msg" id="errorMsg">❌ رمز اشتباهه عشقم...</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="page" id="birthdayPage">
+        <div class="container">
+            <div class="birthday-content">
+                <h1>🎂 تولدت مبارک عشقم ❤️</h1>
+                <div class="message">
+                    امروز روزی است که <span class="special">زمین یک ستاره‌ی تازه پیدا کرد...</span><br>
+                    روزی که آسمان، زیباترین فرشته‌اش را به زمین فرستاد. ✨<br><br>
+                    <span class="special">🌻 تولدت مبارک، ای زیباترین فصل زندگی من 🌻</span><br>
+                    ❤️ من که همیشه در کنار توام، امروز بیشتر از همیشه دوستت دارم.<br><br>
+                    🌹 عشق من، تمام هستی من...<br>
+                    💫 به امید سال‌هایی پر از عشق، لبخند و آرامش...
+                </div>
+                <img src="https://i.postimg.cc/5tDhyRgM/IMG-20260318-184739-714.jpg" class="birthday-photo" alt="Nesa">
+                <div class="love-text">
+                    ❤️ I LOVE YOU NESA ❤️<br><br>
+                    🌻 تو همیشه آفتابِ قلب منی 🌻
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="falling-container" id="fallingContainer"></div>
+    <div class="sparkles" id="sparkles"></div>
 
     <script>
         const CORRECT_PASSWORD = "1386";
 
         function showPassword() {
-            document.getElementById('giftPage').style.display = 'none';
-            document.getElementById('passwordPage').style.display = 'block';
-            document.getElementById('passwordInput').focus();
+            document.getElementById("giftPage").style.display = "none";
+            document.getElementById("passwordPage").style.display = "flex";
+            setTimeout(() => {
+                document.getElementById("passwordInput").focus();
+            }, 300);
         }
 
         function checkPassword() {
-            const input = document.getElementById('passwordInput').value.trim();
-            const errorMsg = document.getElementById('errorMsg');
+            const input = document.getElementById("passwordInput").value.trim();
+            const error = document.getElementById("errorMsg");
 
             if (input === CORRECT_PASSWORD) {
-                errorMsg.style.display = 'none';
-                document.getElementById('passwordPage').style.display = 'none';
-                document.getElementById('birthdayPage').style.display = 'block';
-                startHeartRain();
-                playConfetti();
+                error.style.display = "none";
+                document.getElementById("passwordPage").style.display = "none";
+                document.getElementById("birthdayPage").style.display = "flex";
+                startFalling();
+                createSparkles();
             } else {
-                errorMsg.style.display = 'block';
-                document.getElementById('passwordInput').value = '';
-                document.getElementById('passwordInput').focus();
-                setTimeout(() => { errorMsg.style.display = 'none'; }, 3000);
+                error.style.display = "block";
+                document.getElementById("passwordInput").value = "";
+                setTimeout(() => {
+                    error.style.display = "none";
+                }, 2500);
             }
         }
 
-        function startHeartRain() {
-            const container = document.getElementById('heartRain');
-            const emojis = ['❤️', '💖', '💕', '💗', '❤️‍🔥', '💘', '🌹', '✨'];
-            for (let i = 0; i < 60; i++) {
-                const span = document.createElement('span');
-                span.textContent = emojis[Math.floor(Math.random() * emojis.length)];
-                span.style.left = Math.random() * 100 + '%';
-                span.style.fontSize = (14 + Math.random() * 30) + 'px';
-                span.style.animationDuration = (4 + Math.random() * 6) + 's';
-                span.style.animationDelay = (Math.random() * 5) + 's';
-                container.appendChild(span);
+        document.getElementById("passwordInput").addEventListener("keydown", function(e) {
+            if (e.key === "Enter") {
+                checkPassword();
             }
-        }
-
-        function playConfetti() {
-            const colors = ['#ff2244', '#ff6699', '#ff88aa', '#ffffff', '#ffaa00'];
-            for (let i = 0; i < 50; i++) {
-                const el = document.createElement('div');
-                el.style.cssText = `
-                    position: fixed;
-                    width: 8px;
-                    height: 8px;
-                    background: ${colors[Math.floor(Math.random() * colors.length)]};
-                    left: ${Math.random() * 100}%;
-                    top: -10px;
-                    border-radius: ${Math.random() > 0.5 ? '50%' : '2px'};
-                    z-index: 1000;
-                    animation: confettiFall ${2 + Math.random() * 3}s linear forwards;
-                    animation-delay: ${Math.random() * 1.5}s;
-                    transform: rotate(${Math.random() * 360}deg);
-                `;
-                document.body.appendChild(el);
-                setTimeout(() => el.remove(), 5000);
-            }
-        }
-
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes confettiFall {
-                0% { transform: translateY(0) rotate(0deg); opacity: 1; }
-                100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
-            }
-        `;
-        document.head.appendChild(style);
-
-        document.getElementById('passwordInput').addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') { checkPassword(); }
         });
+
+        function startFalling() {
+            const container = document.getElementById("fallingContainer");
+            const flowers = ["🌻", "🌻", "🌻", "🌼"];
+            const hearts = ["❤️", "💖", "💕", "💗", "💘", "✨"];
+
+            for (let i = 0; i < 35; i++) {
+                const el = document.createElement("div");
+                el.className = "falling";
+                el.textContent = flowers[Math.floor(Math.random() * flowers.length)];
+                el.style.left = Math.random() * 100 + "%";
+                el.style.fontSize = (20 + Math.random() * 30) + "px";
+                el.style.animationDuration = (5 + Math.random() * 7) + "s";
+                el.style.animationDelay = (Math.random() * 7) + "s";
+                container.appendChild(el);
+            }
+
+            for (let i = 0; i < 55; i++) {
+                const el = document.createElement("div");
+                el.className = "falling";
+                el.textContent = hearts[Math.floor(Math.random() * hearts.length)];
+                el.style.left = Math.random() * 100 + "%";
+                el.style.fontSize = (12 + Math.random() * 25) + "px";
+                el.style.animationDuration = (4 + Math.random() * 7) + "s";
+                el.style.animationDelay = (Math.random() * 8) + "s";
+                container.appendChild(el);
+            }
+        }
+
+        function createSparkles() {
+            const container = document.getElementById("sparkles");
+            for (let i = 0; i < 35; i++) {
+                const star = document.createElement("div");
+                star.className = "sparkle";
+                star.textContent = "✦";
+                star.style.left = Math.random() * 100 + "%";
+                star.style.top = Math.random() * 100 + "%";
+                star.style.fontSize = (8 + Math.random() * 12) + "px";
+                star.style.animationDelay = Math.random() * 3 + "s";
+                container.appendChild(star);
+            }
+        }
     </script>
 </body>
 </html>
@@ -727,7 +830,7 @@ def birthday_surprise():
     return render_template_string(BIRTHDAY_SURPRISE_PAGE)
 
 if __name__ == "__main__":
-    print("🚀 ربات ahu goozlum با تمام ویژگی‌ها روشن شد...")
+    print("🚀 ربات ahu goozlum با صفحه سورپرایز جدید روشن شد...")
     print(f"🔑 پسورد: {PASSWORD}")
     print(f"🎂 تولد: {BIRTH_DAY}/{BIRTH_MONTH} (۱۷ مرداد) ساعت {BIRTH_HOUR}:{BIRTH_MINUTE}")
     print(f"📸 تعداد عکس‌ها: {len(PHOTOS)}")
