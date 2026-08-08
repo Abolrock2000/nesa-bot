@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>❤️ I Love You - Ahu Goozlum ❤️</title>
+    <style>
+        * { margin: 0; padding: 0; background: #0a0a0a; overflow: hidden; }
+        body { display: flex; justify-content: center; align-items: center; height: 100vh; }
+        .heart-wrapper { position: relative; width: 500px; height: 470px; display: flex; justify-content: center; align-items: center; }
+        .heart-text { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-wrap: wrap; justify-content: center; align-content: center; gap: 2px; padding: 30px 20px; }
+        .word { color: #ff2244; font-family: 'Arial', sans-serif; font-size: 12px; font-weight: bold; text-shadow: 0 0 3px #ff2244, 0 0 8px #ff2244; animation: pulse 2s ease-in-out infinite alternate; user-select: none; white-space: nowrap; }
+        @keyframes pulse { 0% { opacity: 0.4; transform: scale(0.85); } 100% { opacity: 1; transform: scale(1.05); } }
+        .center-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #ff2244; font-family: 'Arial Black', sans-serif; font-size: 34px; font-weight: 900; text-shadow: 0 0 20px #ff2244, 0 0 40px #ff2244, 0 0 60px #ff4466, 0 0 80px #ff6688; z-index: 10; text-align: center; animation: centerPulse 1.5s ease-in-out infinite alternate; letter-spacing: 2px; background: transparent; pointer-events: none; }
+        .center-text span { display: block; font-size: 16px; color: #ff6699; font-family: 'Arial', sans-serif; font-weight: normal; text-shadow: 0 0 10px #ff6699, 0 0 20px #ff6699; margin-top: 5px; }
+        @keyframes centerPulse { 0% { transform: translate(-50%, -50%) scale(0.95); text-shadow: 0 0 20px #ff2244, 0 0 40px #ff2244; } 100% { transform: translate(-50%, -50%) scale(1.05); text-shadow: 0 0 30px #ff2244, 0 0 60px #ff4466, 0 0 80px #ff6688; } }
+        @media (max-width: 550px) { .heart-wrapper { width: 320px; height: 300px; } .word { font-size: 8px; } .center-text { font-size: 22px; } .center-text span { font-size: 12px; } }
+    </style>
+</head>
+<body>
+    <div class="heart-wrapper">
+        <div class="heart-text" id="heartText"></div>
+        <div class="center-text">
+            ❤️ ahu goozlum ❤️
+            <span>i love you forever</span>
+        </div>
+    </div>
+    <script>
+        const container = document.getElementById('heartText');
+        const text = "i love you";
+        function isInsideHeart(x, y) {
+            const scale = 0.065;
+            const nx = x * scale;
+            const ny = y * scale;
+            const a = nx * nx + ny * ny - 1;
+            return a * a * a - nx * nx * ny * ny * ny <= 0;
+        }
+        const rows = 32, cols = 28;
+        for (let row = 0; row < rows; row++) {
+            for (let col = 0; col < cols; col++) {
+                const x = (col / cols) * 2 - 1;
+                const y = (row / rows) * 2 - 1;
+                if (isInsideHeart(x, y)) {
+                    const word = document.createElement('span');
+                    word.className = 'word';
+                    word.textContent = text;
+                    word.style.fontSize = `${9 + Math.random() * 6}px`;
+                    word.style.animationDelay = `${Math.random() * 3}s`;
+                    word.style.opacity = 0.5 + Math.random() * 0.5;
+                    container.appendChild(word);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
