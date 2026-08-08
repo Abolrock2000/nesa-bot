@@ -613,7 +613,7 @@ def birthday_timer():
 
 
 # ============================================================
-# 🌻 صفحه سورپرایز تولد (با قلب‌های جدید و z-index بالا)
+# 🌻 صفحه سورپرایز تولد
 # ============================================================
 
 BIRTHDAY_SURPRISE_PAGE = r"""
@@ -710,37 +710,10 @@ button{
     border:2px solid rgba(255,190,100,.6);
     box-shadow:0 0 35px rgba(255,150,0,.25);
 }
-
-/* ===== قلب‌های جدید ===== */
-.heart-rain {
-    position: fixed;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    z-index: 999999;
-    overflow: hidden;
-}
-
-.heart-rain span {
-    position: absolute;
-    top: -50px;
-    display: block;
-    animation: heartFall linear infinite;
-    filter: drop-shadow(0 0 8px rgba(255, 50, 100, 0.7));
-}
-
-@keyframes heartFall {
-    0% { transform: translateY(-60px) rotate(0deg); opacity: 0; }
-    10% { opacity: 1; }
-    100% { transform: translateY(115vh) rotate(720deg); opacity: 0; }
-}
-
-/* ===== گل‌ها و قلب‌های قدیمی با z-index بالا ===== */
 .flower{
     position:fixed;
     top:-100px;
-    z-index:99999;
+    z-index:5;
     pointer-events:none;
     animation:flowerFall linear forwards;
 }
@@ -752,11 +725,11 @@ button{
 .heart{
     position:fixed;
     top:-60px;
-    z-index:99999;
+    z-index:4;
     pointer-events:none;
-    animation:heartFallOld linear forwards;
+    animation:heartFall linear forwards;
 }
-@keyframes heartFallOld{
+@keyframes heartFall{
     0%{transform:translateY(-60px) rotate(0deg);opacity:0;}
     10%{opacity:1;}
     100%{transform:translateY(110vh) rotate(360deg);opacity:0;}
@@ -777,15 +750,10 @@ button{
 <body>
 <div class="glow one"></div>
 <div class="glow two"></div>
-
-<!-- ===== بارش قلب جدید ===== -->
-<div class="heart-rain" id="heartRain"></div>
-
 <div class="container" id="giftPage">
     <div class="gift" onclick="showPassword()">🎁</div>
     <div class="openText">🌻 برای باز کردن هدیه کلیک کن 🌻</div>
 </div>
-
 <div class="container" id="passwordPage">
     <div class="card">
         <h1>🔐 هدیه مخصوص تو</h1>
@@ -795,7 +763,6 @@ button{
         <p id="error" style="display:none;color:#ff5577;margin-top:15px">❌ رمز اشتباهه</p>
     </div>
 </div>
-
 <div class="container" id="birthdayPage">
     <div class="card">
         <div class="birthdayTitle">🌻🎂 تولدت مبارک نسا 🎂🌻</div>
@@ -814,45 +781,24 @@ button{
         <img class="photo" src="https://i.postimg.cc/5tDhyRgM/IMG-20260318-184739-714.jpg">
     </div>
 </div>
-
 <script>
 const PASSWORD = "1386";
-
 function showPassword(){
     document.getElementById("giftPage").style.display="none";
     document.getElementById("passwordPage").style.display="block";
     document.getElementById("passwordInput").focus();
 }
-
 function checkPassword(){
     const input = document.getElementById("passwordInput").value.trim();
     if(input === PASSWORD){
         document.getElementById("passwordPage").style.display="none";
         document.getElementById("birthdayPage").style.display="block";
-        startHeartRain();
         startFlowers();
         startHearts();
     }else{
         document.getElementById("error").style.display="block";
     }
 }
-
-// ===== بارش قلب جدید =====
-function startHeartRain(){
-    const container = document.getElementById("heartRain");
-    const emojis = ["❤️", "💖", "💕", "💗", "💘", "❤️‍🔥", "🌹", "✨"];
-    for(let i = 0; i < 60; i++){
-        const span = document.createElement("span");
-        span.textContent = emojis[Math.floor(Math.random() * emojis.length)];
-        span.style.left = Math.random() * 100 + "%";
-        span.style.fontSize = (14 + Math.random() * 30) + "px";
-        span.style.animationDuration = (4 + Math.random() * 6) + "s";
-        span.style.animationDelay = (Math.random() * 5) + "s";
-        container.appendChild(span);
-    }
-}
-
-// ===== گل‌ها =====
 function startFlowers(){
     const flowers=["🌻","🌼","🌺","🌸","💐","🌷","🪻","🌹"];
     for(let i=0;i<55;i++){
@@ -867,8 +813,6 @@ function startFlowers(){
         setTimeout(()=>flower.remove(),14000);
     }
 }
-
-// ===== قلب‌های قدیمی =====
 function startHearts(){
     const hearts=["❤️","💖","💕","💗","💘","❤️‍🔥"];
     for(let i=0;i<50;i++){
@@ -883,7 +827,6 @@ function startHearts(){
         setTimeout(()=>heart.remove(),13000);
     }
 }
-
 document.getElementById("passwordInput").addEventListener("keydown", function(e){
     if(e.key==="Enter"){checkPassword();}
 });
@@ -971,6 +914,11 @@ def webhook():
     return "OK", 200
 
 
+@app.route("/health", methods=["GET"])
+def health():
+    return "OK", 200
+
+
 @app.route("/love")
 def love_page():
     return render_template_string(PHOTO_MOSAIC_PAGE)
@@ -991,6 +939,7 @@ if __name__ == "__main__":
     print(f"📸 تعداد عکس‌ها: {len(PHOTOS)}")
     print("❤️ صفحه عشق: /love")
     print("🎉 صفحه تولد: /birthday_surprise.html")
+    print("🩺 مسیر سلامت: /health")
 
     timer_thread = threading.Thread(target=birthday_timer, daemon=True)
     timer_thread.start()
