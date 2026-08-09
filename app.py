@@ -1,10 +1,10 @@
 from flask import Flask, request, render_template_string
 import requests
-import random
 import datetime
 import os
 import threading
 import time
+import random
 
 app = Flask(__name__)
 
@@ -12,24 +12,39 @@ app = Flask(__name__)
 # تنظیمات
 # ============================================================
 
-# توکن را در Render > Environment Variables با نام BOT_TOKEN بگذار.
-TOKEN = os.environ.get("BOT_TOKEN", "PASTE_YOUR_NEW_BOT_TOKEN_HERE")
-YOUR_CHAT_ID = os.environ.get("YOUR_CHAT_ID", "1228473012")
+TOKEN = os.environ.get("BOT_TOKEN", "").strip()
+YOUR_CHAT_ID = os.environ.get("YOUR_CHAT_ID", "1228473012").strip()
 
 PASSWORD = os.environ.get("LOVE_PASSWORD", "1386")
+
+# لینک سه‌تار
+SETAR_LINK = "https://t.me/+robRoFDJYKtlNmRk"
+
+# آدرس سایت Render خودت را اینجا بگذار
+SITE_URL = os.environ.get(
+    "SITE_URL",
+    "https://nesa-bot.onrender.com"
+).rstrip("/")
+
+# تاریخ روز آشنایی
+MEETING_DATE = datetime.datetime(
+    2026, 3, 15, 0, 0, 0,
+    tzinfo=datetime.timezone(datetime.timedelta(hours=3, minutes=30))
+)
+
+IRAN_TZ = datetime.timezone(datetime.timedelta(hours=3, minutes=30))
 
 BIRTH_DAY = 8
 BIRTH_MONTH = 8
 BIRTH_HOUR = 0
 BIRTH_MINUTE = 0
 
-IRAN_OFFSET = datetime.timedelta(hours=3, minutes=30)
 user_access = {}
+reconcile_sessions = {}
 
-MEETING_DATE = datetime.datetime(
-    2026, 3, 15, 0, 0, 0,
-    tzinfo=datetime.timezone(IRAN_OFFSET)
-)
+# ============================================================
+# عکس‌ها
+# ============================================================
 
 PHOTOS = {
     "📸 عکس ۱": {
@@ -62,6 +77,10 @@ PHOTOS = {
     }
 }
 
+# ============================================================
+# متن تولد
+# ============================================================
+
 BIRTHDAY_MESSAGE = """🎂 تولدت مبارک، ahu goozlum... ❤️
 
 امروز فقط یک روز معمولی نیست...
@@ -84,6 +103,7 @@ BIRTHDAY_MESSAGE = """🎂 تولدت مبارک، ahu goozlum... ❤️
 که تو را در زندگی‌ام دارم.
 
 🌻 نسا جان...
+
 امیدوارم امسال برایت
 پر از آرامش،
 خنده،
@@ -98,14 +118,9 @@ BIRTHDAY_MESSAGE = """🎂 تولدت مبارک، ahu goozlum... ❤️
 🌻 همیشه بخند
 ❤️ چون لبخندت زیباترین چیز دنیاست."""
 
-SECOND_QUOTES = [
-    "هر ثانیه‌ای که می‌گذرد، عشق من به تو عمیق‌تر می‌شود... ❤️",
-    "ثانیه‌ها می‌گذرند، اما عشق من به تو هرگز کهنه نمی‌شود... 🌹",
-    "در هر ثانیه‌ای از زندگی‌ام، تو را نفس می‌کشم... 💫",
-    "ثانیه‌های بی‌تو طولانی‌اند، اما کنار تو حتی ساعت‌ها هم کوتاه‌اند... ✨",
-    "هر ثانیه که می‌گذرد، یک دلیل تازه برای دوست داشتن تو پیدا می‌کنم... ❤️",
-    "ثانیه‌ها را بشمار، اما عشق را نه؛ چون عشق من به تو بی‌نهایت است... 🌸"
-]
+# ============================================================
+# نامه‌ها
+# ============================================================
 
 LOVE_LETTERS = [
 """💌 نامه‌ای از دل من...
@@ -119,7 +134,9 @@ LOVE_LETTERS = [
 از وقتی وارد زندگی من شدی،
 خیلی از چیزها معنای تازه‌ای پیدا کردند.
 
-لبخند، دلتنگی، انتظار،
+لبخند،
+دلتنگی،
+انتظار
 و حتی ساده‌ترین لحظه‌های زندگی.
 
 تو همان آدمی هستی که
@@ -135,10 +152,10 @@ LOVE_LETTERS = [
 
 نسا جان،
 
-اگر یک روز از من بپرسند
+اگر یک روز از من بپرسند:
 عشق یعنی چه؟
 
-من نمی‌خواهم توضیح بدهم.
+من توضیح نمی‌دهم.
 
 فقط تو را نشانشان می‌دهم.
 
@@ -149,7 +166,8 @@ LOVE_LETTERS = [
 تو برای من فقط یک نفر نیستی.
 
 تو بخشی از آرامش،
-خنده‌ها، فکرها
+خنده‌ها،
+فکرها
 و تمام رؤیاهای منی.
 
 🌹 دوستت دارم،
@@ -167,7 +185,8 @@ LOVE_LETTERS = [
 بعد یاد تو می‌افتم
 و جوابم را پیدا می‌کنم.
 
-تو آمدی و آرام‌آرام
+تو آمدی
+و آرام‌آرام
 جایی در قلبم ساختی
 که دیگر هیچ‌کس
 نمی‌تواند جای آن را بگیرد.
@@ -176,44 +195,64 @@ LOVE_LETTERS = [
 ولی تو نباشی،
 باز هم چیزی کم است.
 
-چیزی به اسم «تو».""",
-
-"""💌 نامه‌ای که فقط برای توست...
-
-نسا جان،
-
-من آینده را نمی‌دانم.
-
-نمی‌دانم فردا چه اتفاقی می‌افتد،
-اما یک چیز را خوب می‌دانم:
-
-هر جا که باشم،
-یک گوشه از قلبم
-همیشه برای توست.
-
-برای خنده‌هایت،
-برای حرف زدنت،
-برای نگاهت
-و برای تمام لحظه‌هایی
-که کنار هم می‌گذرانیم.
-
-🌻 تو یکی از قشنگ‌ترین
-اتفاق‌های زندگی منی.
-
-❤️ و من بابت داشتنت
-هر روز خدا را شکر می‌کنم."""
+چیزی به اسم «تو»."""
 ]
 
-def get_current_iran_time():
-    return datetime.datetime.now(datetime.timezone.utc).astimezone(
-        datetime.timezone(IRAN_OFFSET)
+# ============================================================
+# زمان ایران
+# ============================================================
+
+def iran_now():
+    return datetime.datetime.now(datetime.timezone.utc).astimezone(IRAN_TZ)
+
+
+# ============================================================
+# روز آشنایی
+# ============================================================
+
+def meeting_seconds():
+    now = iran_now()
+
+    if now < MEETING_DATE:
+        return 0
+
+    return int((now - MEETING_DATE).total_seconds())
+
+
+# ============================================================
+# شمارش تولد
+# ============================================================
+
+def birthday_countdown():
+    now = iran_now()
+
+    birth = datetime.datetime(
+        now.year,
+        BIRTH_MONTH,
+        BIRTH_DAY,
+        BIRTH_HOUR,
+        BIRTH_MINUTE,
+        tzinfo=IRAN_TZ
     )
 
-def get_meeting_seconds():
-    now = get_current_iran_time()
-    return max(0, int((now - MEETING_DATE).total_seconds()))
+    if now >= birth:
+        birth = datetime.datetime(
+            now.year + 1,
+            BIRTH_MONTH,
+            BIRTH_DAY,
+            BIRTH_HOUR,
+            BIRTH_MINUTE,
+            tzinfo=IRAN_TZ
+        )
 
-def get_main_keyboard():
+    return max(0, int((birth - now).total_seconds()))
+
+
+# ============================================================
+# کیبورد اصلی
+# ============================================================
+
+def main_keyboard():
     return {
         "keyboard": [
             ["📸 عکس‌ها"],
@@ -222,13 +261,15 @@ def get_main_keyboard():
             ["💌 نامه عشق"],
             ["❤️ صفحه عشق"],
             ["🎉 تبریک برای عشقم"],
-            ["🤝 آشتی کنیم"],
+            ["🤝 بیا آشتی کنیم"],
+            ["🎵 آموزش سه‌تار"],
             ["🔙 بازگشت به منو"]
         ],
         "resize_keyboard": True
     }
 
-def get_photo_keyboard():
+
+def photo_keyboard():
     return {
         "keyboard": [
             ["📸 عکس ۱", "📸 عکس ۲", "📸 عکس ۳"],
@@ -239,63 +280,216 @@ def get_photo_keyboard():
         "resize_keyboard": True
     }
 
-def get_password_keyboard():
+
+def back_keyboard():
     return {
-        "keyboard": [["🔙 بازگشت به منو"]],
+        "keyboard": [
+            ["🔙 بازگشت به منو"]
+        ],
         "resize_keyboard": True
     }
+
+
+# ============================================================
+# تلگرام
+# ============================================================
 
 def telegram_url(method):
     return f"https://api.telegram.org/bot{TOKEN}/{method}"
 
-def send_message(chat_id, text, reply_markup=None):
-    try:
-        payload = {"chat_id": chat_id, "text": text}
-        if reply_markup:
-            payload["reply_markup"] = reply_markup
-        r = requests.post(telegram_url("sendMessage"), json=payload, timeout=12)
-        return r.ok
-    except Exception as e:
-        print("send_message:", e)
+
+def send_message(chat_id, text, keyboard=None):
+    if not TOKEN:
+        print("BOT_TOKEN تنظیم نشده است.")
         return False
 
-def send_photo(chat_id, photo_path, caption=""):
+    data = {
+        "chat_id": chat_id,
+        "text": text
+    }
+
+    if keyboard:
+        data["reply_markup"] = keyboard
+
     try:
-        if photo_path.startswith("http"):
+        r = requests.post(
+            telegram_url("sendMessage"),
+            json=data,
+            timeout=12
+        )
+
+        if r.ok:
+            return True
+
+        print("Telegram sendMessage:", r.status_code, r.text)
+
+    except Exception as e:
+        print("send_message:", e)
+
+    return False
+
+
+def send_photo(chat_id, path, caption=""):
+    if not TOKEN:
+        return False
+
+    try:
+
+        # عکس اینترنتی
+        if path.startswith("http"):
             r = requests.post(
                 telegram_url("sendPhoto"),
-                data={"chat_id": chat_id, "photo": photo_path, "caption": caption},
+                data={
+                    "chat_id": chat_id,
+                    "photo": path,
+                    "caption": caption
+                },
                 timeout=20
             )
+
             return r.ok
 
-        if not os.path.exists(photo_path):
-            send_message(chat_id, "❌ عکس پیدا نشد!")
+        # عکس محلی
+        if not os.path.exists(path):
+            send_message(chat_id, "❌ عکس پیدا نشد.")
             return False
 
-        with open(photo_path, "rb") as photo:
+        with open(path, "rb") as f:
             r = requests.post(
                 telegram_url("sendPhoto"),
-                data={"chat_id": chat_id, "caption": caption},
-                files={"photo": photo},
+                data={
+                    "chat_id": chat_id,
+                    "caption": caption
+                },
+                files={
+                    "photo": f
+                },
                 timeout=30
             )
+
         return r.ok
+
     except Exception as e:
         print("send_photo:", e)
         return False
 
+
+# ============================================================
+# سیستم «بیا آشتی کنیم»
+# ============================================================
+
+def start_reconciliation(chat_id):
+
+    reconcile_sessions[str(chat_id)] = {
+        "waiting": True
+    }
+
+    send_message(
+        chat_id,
+        """🤍 بیا آشتی کنیم...
+
+اگر حرفی توی دلت مونده،
+اینجا بنویس.
+
+پیامت مستقیم برای من ارسال میشه،
+حتی اگر غرورت اجازه نده مستقیم بهم پیام بدی. 🥺❤️
+
+هرچی دوست داری بگو...
+من می‌خونمش. 🌷
+
+✍️ پیامت رو بفرست:""",
+        back_keyboard()
+    )
+
+
+def handle_reconciliation(chat_id, text):
+
+    sid = str(chat_id)
+
+    if sid not in reconcile_sessions:
+        return False
+
+    if not reconcile_sessions[sid].get("waiting"):
+        return False
+
+    if text == "🔙 بازگشت به منو":
+        reconcile_sessions.pop(sid, None)
+        send_message(
+            chat_id,
+            "🏠 برگشتیم به منوی اصلی ❤️",
+            main_keyboard()
+        )
+        return True
+
+    # پیام را برای صاحب ربات ارسال کن
+    message = f"""🤍 پیام آشتی از طرف پارتنرت:
+
+━━━━━━━━━━━━━━
+
+{text}
+
+━━━━━━━━━━━━━━
+
+📩 برای پاسخ دادن، همین پیام را می‌توانی از داخل ربات مدیریت کنی."""
+
+    ok = send_message(
+        YOUR_CHAT_ID,
+        message
+    )
+
+    if ok:
+        send_message(
+            chat_id,
+            """❤️ پیامت با موفقیت ارسال شد.
+
+حرفت بهش رسید. 🤍
+
+حالا دیگه باقی‌ش رو بسپار به دلش...
+🌷 امیدوارم خیلی زود دوباره باهم خوب بشین.""",
+            main_keyboard()
+        )
+    else:
+        send_message(
+            chat_id,
+            """❌ فعلاً نتونستم پیام رو ارسال کنم.
+
+چند لحظه دیگه دوباره امتحان کن. ❤️"""
+        )
+
+    reconcile_sessions.pop(sid, None)
+
+    return True
+
+
+# ============================================================
+# پردازش پیام
+# ============================================================
+
 def handle_message(chat_id, text):
+
     chat_id = str(chat_id)
     text = (text or "").strip()
 
+    # آشتی
+    if handle_reconciliation(chat_id, text):
+        return
+
+    # -------------------------------
+    # Start
+    # -------------------------------
+
     if text == "/start":
-        user_access[chat_id] = {"photos": False, "waiting_for_password": False}
+
+        user_access[chat_id] = {
+            "photos": False,
+            "password": False
+        }
+
         send_message(
             chat_id,
             """🌻❤️ به دنیای ahu goozlum خوش اومدی ❤️🌻
 
-🎁 اینجا یک گوشه کوچیک از قلب منه...
+اینجا یک گوشه کوچیک از قلب منه...
 
 📸 عکس‌های خصوصی
 🎂 تولد نسا
@@ -304,66 +498,161 @@ def handle_message(chat_id, text):
 💌 نامه‌های عاشقانه
 ❤️ صفحه عشق
 🎉 سورپرایز تولد
-🤝 اگر غرورت اجازه نداد پیام بدی، از اینجا آشتی کن
+🤝 بیا آشتی کنیم
+🎵 آموزش سه‌تار
 
 🌻 هر دکمه یک تکه از داستان ماست...""",
-            get_main_keyboard()
+            main_keyboard()
         )
         return
 
-    state = user_access.setdefault(
-        chat_id, {"photos": False, "waiting_for_password": False}
-    )
+    # -------------------------------
+    # آشتی
+    # -------------------------------
 
-    if text == "🔙 بازگشت به منو":
-        state["waiting_for_password"] = False
-        send_message(chat_id, "🏠 برگشتیم به منوی اصلی ❤️", get_main_keyboard())
+    if text == "🤝 بیا آشتی کنیم":
+        start_reconciliation(chat_id)
         return
 
-    if state.get("waiting_for_password"):
+    # -------------------------------
+    # سه‌تار
+    # -------------------------------
+
+    if text == "🎵 آموزش سه‌تار":
+
+        send_message(
+            chat_id,
+            f"""🎵 آموزش سه‌تار
+
+اگر دوست داری آموزش سه‌تار رو ببینی،
+از لینک زیر وارد شو:
+
+{SETAR_LINK}
+
+🎶 موفق باشی ❤️""",
+            main_keyboard()
+        )
+        return
+
+    # -------------------------------
+    # Password
+    # -------------------------------
+
+    access = user_access.get(chat_id, {})
+
+    if access.get("waiting_password"):
+
         if text == PASSWORD:
-            state["photos"] = True
-            state["waiting_for_password"] = False
+
+            user_access[chat_id]["photos"] = True
+            user_access[chat_id]["waiting_password"] = False
+
             send_message(
                 chat_id,
-                "✅ رمز درست بود!\n\n🔓 گالری اختصاصی باز شد ❤️",
-                get_photo_keyboard()
+                """✅ رمز درست بود!
+
+🔓 گالری اختصاصی برات باز شد ❤️""",
+                photo_keyboard()
             )
+
         else:
+
             send_message(
                 chat_id,
-                "❌ رمز اشتباهه!\n\nدوباره امتحان کن ❤️",
-                get_password_keyboard()
+                """❌ رمز اشتباهه.
+
+دوباره امتحان کن ❤️""",
+                back_keyboard()
             )
+
         return
 
-    if text == "📸 عکس‌ها" or text in PHOTOS:
-        if not state.get("photos"):
-            state["waiting_for_password"] = True
+    # -------------------------------
+    # گالری
+    # -------------------------------
+
+    if text == "📸 عکس‌ها":
+
+        if access.get("photos"):
+
             send_message(
                 chat_id,
-                "🔐 این قسمت خصوصی و مخصوص خودته.\n\nلطفاً رمز مخصوص رو وارد کن ❤️",
-                get_password_keyboard()
+                "📸 کدوم عکس رو می‌خوای ببینی؟ ❤️",
+                photo_keyboard()
             )
-            return
 
-        if text == "📸 عکس‌ها":
-            send_message(chat_id, "📸 کدوم عکس رو می‌خوای ببینی؟ ❤️", get_photo_keyboard())
         else:
+
+            user_access.setdefault(chat_id, {})
+            user_access[chat_id]["waiting_password"] = True
+
+            send_message(
+                chat_id,
+                """🔐 این قسمت خصوصی و مخصوص خودته.
+
+رمز مخصوص رو وارد کن ❤️""",
+                back_keyboard()
+            )
+
+        return
+
+    # -------------------------------
+    # عکس
+    # -------------------------------
+
+    if text in PHOTOS:
+
+        if access.get("photos"):
+
             p = PHOTOS[text]
-            send_photo(chat_id, p["path"], p["caption"])
+
+            send_photo(
+                chat_id,
+                p["path"],
+                p["caption"]
+            )
+
+        else:
+
+            user_access.setdefault(chat_id, {})
+            user_access[chat_id]["waiting_password"] = True
+
+            send_message(
+                chat_id,
+                "🔐 اول رمز گالری رو وارد کن ❤️",
+                back_keyboard()
+            )
+
         return
+
+    # -------------------------------
+    # تولد
+    # -------------------------------
 
     if text == "🎂 تولد نسا":
-        send_message(chat_id, BIRTHDAY_MESSAGE)
+
+        send_message(
+            chat_id,
+            BIRTHDAY_MESSAGE
+        )
+
         return
 
+    # -------------------------------
+    # روز آشنایی
+    # -------------------------------
+
     if text == "📅 روز آشنایی":
-        seconds = get_meeting_seconds()
+
+        seconds = meeting_seconds()
         days = seconds // 86400
-        hours = (seconds % 86400) // 3600
-        minutes = (seconds % 3600) // 60
-        secs = seconds % 60
+
+        quote = random.choice([
+            "هر ثانیه‌ای که می‌گذرد، عشق من به تو عمیق‌تر می‌شود... ❤️",
+            "ثانیه‌ها می‌گذرند، اما عشق من به تو کهنه نمی‌شود... 🌹",
+            "در هر ثانیه‌ای از زندگی‌ام، تو را نفس می‌کشم... 💫",
+            "هر ثانیه که می‌گذرد، یک دلیل تازه برای دوست داشتن تو پیدا می‌کنم... ❤️"
+        ])
 
         send_message(
             chat_id,
@@ -371,43 +660,38 @@ def handle_message(chat_id, text):
 
 📅 ۲۴ اسفند ۱۴۰۴
 
-🌻 {days} روز از قشنگ‌ترین فصل زندگی ما گذشته.
+🌻 {days:,} روز از قشنگ‌ترین فصل زندگی من گذشته.
 
-⏱️ {seconds:,} ثانیه
-یعنی:
-{days} روز و {hours} ساعت و {minutes} دقیقه و {secs} ثانیه
+⏱️ {seconds:,} ثانیه...
 
-❤️ تمام این ثانیه‌ها برای من
-یعنی زمانی که قلبم برای تو تپیده است.
+این فقط یک عدد نیست.
 
-و اگر قرار باشد تمام این لحظه‌ها را
-دوباره زندگی کنم،
+این {seconds:,} ثانیه،
+بخشی از زمانی است که
+قلبم با یاد تو تپیده. ❤️
+
+اگر دوباره به اولین روز برگردم،
 باز هم تو را انتخاب می‌کنم.
 
-🌹 {random.choice(SECOND_QUOTES)}
+🌹 {quote}
 
-❤️ از روز آشنایی‌مان تا همیشه...
-تو یکی از زیباترین اتفاق‌های زندگی منی."""
+❤️ از روز آشنایی‌مان تا همیشه..."""
         )
+
         return
 
+    # -------------------------------
+    # شمارش تولد
+    # -------------------------------
+
     if text == "⏳ ساعت تا تولدت":
-        now = get_current_iran_time()
-        birth = datetime.datetime(
-            now.year, BIRTH_MONTH, BIRTH_DAY,
-            BIRTH_HOUR, BIRTH_MINUTE,
-            tzinfo=datetime.timezone(IRAN_OFFSET)
-        )
-        if now >= birth:
-            birth = datetime.datetime(
-                now.year + 1, BIRTH_MONTH, BIRTH_DAY,
-                BIRTH_HOUR, BIRTH_MINUTE,
-                tzinfo=datetime.timezone(IRAN_OFFSET)
-            )
-        total = max(0, int((birth - now).total_seconds()))
-        days, rem = divmod(total, 86400)
-        hours, rem = divmod(rem, 3600)
-        minutes, seconds = divmod(rem, 60)
+
+        total = birthday_countdown()
+
+        days = total // 86400
+        hours = (total % 86400) // 3600
+        minutes = (total % 3600) // 60
+        seconds = total % 60
 
         send_message(
             chat_id,
@@ -418,282 +702,1223 @@ def handle_message(chat_id, text):
 ⏳ {days} روز
 🕐 {hours} ساعت
 ⏱️ {minutes} دقیقه
-⏲️ {seconds} ثانیه
+⏰ {seconds} ثانیه
 
-هر لحظه که می‌گذره،
-یک قدم به روزی نزدیک‌تر می‌شیم
-که دنیا قشنگ‌تر شد؛
+تا روزی که دنیا قشنگ‌تر شد؛
 روزی که تو به دنیا اومدی. ❤️🌻"""
         )
+
         return
+
+    # -------------------------------
+    # نامه
+    # -------------------------------
 
     if text == "💌 نامه عشق":
-        send_message(chat_id, random.choice(LOVE_LETTERS))
-        return
 
-    if text == "❤️ صفحه عشق":
         send_message(
             chat_id,
-            """❤️ یک سورپرایز مخصوص تو آماده کردم...
+            random.choice(LOVE_LETTERS)
+        )
+
+        return
+
+    # -------------------------------
+    # صفحه عشق
+    # -------------------------------
+
+    if text == "❤️ صفحه عشق":
+
+        send_message(
+            chat_id,
+            f"""❤️ یک سورپرایز مخصوص تو آماده کردم...
 
 چهره‌ات با کلمات
 I LOVE YOU NESA
-ساخته شده. ✨❤️
+ساخته شده. 🌹
 
 👇 بازش کن:
 
-https://nesa-bot.onrender.com/love"""
+{SITE_URL}/love"""
         )
+
         return
 
+    # -------------------------------
+    # سورپرایز
+    # -------------------------------
+
     if text == "🎉 تبریک برای عشقم":
+
         send_message(
             chat_id,
-            """🎁 یک هدیه مخصوص برای تو آماده شده...
+            f"""🎁 یک هدیه مخصوص برای تو آماده شده...
 
 آروم بازش کن 🌻❤️
 
 👇 سورپرایز تولدت:
 
-https://nesa-bot.onrender.com/birthday_surprise.html"""
+{SITE_URL}/birthday_surprise.html"""
         )
+
         return
 
-    if text == "🤝 آشتی کنیم":
+    # -------------------------------
+    # بازگشت
+    # -------------------------------
+
+    if text == "🔙 بازگشت به منو":
+
+        old = user_access.get(chat_id, {})
+
+        user_access[chat_id] = {
+            "photos": old.get("photos", False),
+            "waiting_password": False
+        }
+
+        reconcile_sessions.pop(chat_id, None)
+
         send_message(
             chat_id,
-            """🤍 اگر دلت گرفته و غرورت اجازه نمی‌ده مستقیم پیام بدی...
+            """🏠 برگشتیم به منوی اصلی...
 
-اینجا فقط حرف دلت رو بنویس.
-من پیام رو برای صاحب این ربات می‌فرستم.
-
-💌 هرچی می‌خوای بگو؛
-حتی فقط بنویس «دلم برات تنگ شده»."""
+🌻 هر چیزی که بخوای اینجاست ❤️""",
+            main_keyboard()
         )
-        state["waiting_for_reconciliation"] = True
+
         return
 
-    if state.get("waiting_for_reconciliation"):
-        state["waiting_for_reconciliation"] = False
-        message = f"""🤝 پیام آشتی جدید ❤️
+    # -------------------------------
+    # نامعتبر
+    # -------------------------------
 
-از طرف:
-{chat_id}
+    send_message(
+        chat_id,
+        """❌ این دستور رو نمی‌شناسم.
 
-💌 متن پیام:
-{text}"""
-        send_message(YOUR_CHAT_ID, message)
-        send_message(
-            chat_id,
-            "❤️ پیامت با موفقیت بهش رسید.\n\nامیدوارم خیلی زود آشتی کنید 🌹"
-        )
-        return
+از دکمه‌های پایین استفاده کن ❤️""",
+        main_keyboard()
+    )
 
-    send_message(chat_id, "❌ از دکمه‌های پایین استفاده کن ❤️", get_main_keyboard())
+
+# ============================================================
+# تولد خودکار
+# ============================================================
+
+def birthday_timer():
+
+    last_sent_date = None
+
+    while True:
+
+        try:
+
+            now = iran_now()
+
+            if (
+                now.month == BIRTH_MONTH
+                and now.day == BIRTH_DAY
+                and now.hour == BIRTH_HOUR
+                and now.minute == BIRTH_MINUTE
+            ):
+
+                today = now.date()
+
+                if last_sent_date != today:
+
+                    print("🎂 ارسال پیام تولد...")
+
+                    send_message(
+                        YOUR_CHAT_ID,
+                        BIRTHDAY_MESSAGE
+                    )
+
+                    photo = PHOTOS["📸 عکس ۱"]
+
+                    if os.path.exists(photo["path"]):
+
+                        send_photo(
+                            YOUR_CHAT_ID,
+                            photo["path"],
+                            photo["caption"]
+                        )
+
+                    last_sent_date = today
+
+                    print("✅ تولد ارسال شد.")
+
+        except Exception as e:
+
+            print("birthday_timer:", e)
+
+        time.sleep(20)
+
 
 # ============================================================
 # صفحه تولد
 # ============================================================
 
 BIRTHDAY_PAGE = r"""
-<!doctype html>
+<!DOCTYPE html>
 <html lang="fa" dir="rtl">
+
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width,initial-scale=1.0">
+
 <title>🌻 تولدت مبارک نسا ❤️</title>
+
 <style>
-*{box-sizing:border-box}
-html,body{margin:0;width:100%;height:100%;overflow:hidden}
+
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+}
+
 body{
- background:radial-gradient(circle,#401522,#12070b 55%,#030204);
- color:#fff;font-family:Tahoma,Arial,sans-serif;
- display:flex;align-items:center;justify-content:center;
+
+    min-height:100vh;
+
+    background:
+    radial-gradient(
+        circle at 50% 30%,
+        #54152d 0%,
+        #200914 35%,
+        #050205 100%
+    );
+
+    color:white;
+
+    font-family:
+    Tahoma,
+    Arial,
+    sans-serif;
+
+    overflow:hidden;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
 }
-#scene{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:1}
-.container{width:min(92%,520px);position:relative;z-index:10;text-align:center}
+
+.container{
+
+    width:92%;
+    max-width:540px;
+
+    text-align:center;
+
+    position:relative;
+
+    z-index:100;
+}
+
+.gift{
+
+    font-size:130px;
+
+    cursor:pointer;
+
+    animation:
+    floatGift 2.4s ease-in-out infinite;
+
+    filter:
+    drop-shadow(
+        0 0 35px
+        rgba(255,80,130,.8)
+    );
+}
+
+@keyframes floatGift{
+
+    0%,100%{
+        transform:
+        translateY(0)
+        rotate(-3deg);
+    }
+
+    50%{
+        transform:
+        translateY(-22px)
+        rotate(3deg);
+    }
+}
+
+.openText{
+
+    margin-top:20px;
+
+    color:#ffd8e3;
+
+    font-size:18px;
+}
+
 .card{
- padding:28px 22px;border-radius:28px;
- background:rgba(28,7,15,.82);
- border:1px solid rgba(255,190,120,.45);
- box-shadow:0 0 60px rgba(255,80,120,.25),inset 0 0 30px rgba(255,180,70,.08);
- backdrop-filter:blur(12px)
+
+    padding:30px 22px;
+
+    border-radius:30px;
+
+    background:
+    linear-gradient(
+        145deg,
+        rgba(80,15,40,.92),
+        rgba(15,4,12,.95)
+    );
+
+    border:
+    1px solid
+    rgba(255,160,190,.4);
+
+    box-shadow:
+    0 0 70px
+    rgba(255,50,110,.3),
+
+    inset 0 0 35px
+    rgba(255,70,120,.08);
+
+    backdrop-filter:blur(15px);
 }
-.gift{font-size:125px;cursor:pointer;animation:float 2.5s ease-in-out infinite;filter:drop-shadow(0 0 25px #ff416c)}
-@keyframes float{50%{transform:translateY(-18px) rotate(3deg)}}
-#password,#birthday{display:none}
-h1{color:#ffd36e;text-shadow:0 0 25px #ff9d00}
-p{line-height:2}
-input{width:100%;padding:14px;border-radius:15px;background:#090308;color:#fff;border:1px solid #ff6685;text-align:center;font-size:20px}
-button{padding:14px 28px;margin-top:15px;border:0;border-radius:30px;background:linear-gradient(45deg,#ff416c,#ff758c);color:white;font-weight:bold;font-size:17px}
-.photo{width:min(100%,340px);border-radius:20px;margin-top:18px;border:2px solid #ffc66d;box-shadow:0 0 35px #ff9d0055}
-.fall{position:absolute;top:-80px;animation:fall linear forwards;user-select:none}
-@keyframes fall{0%{transform:translateY(-80px) rotate(0);opacity:0}10%{opacity:1}100%{transform:translateY(115vh) rotate(720deg);opacity:0}}
-.sun{position:absolute;bottom:-120px;animation:sunrise linear forwards;filter:drop-shadow(0 0 12px #ffb000)}
-@keyframes sunrise{0%{transform:translateY(150px) rotate(-20deg);opacity:0}15%{opacity:1}100%{transform:translateY(-120vh) rotate(360deg);opacity:0}}
+
+h1{
+
+    color:#ffd46d;
+
+    margin-bottom:20px;
+
+    text-shadow:
+    0 0 25px
+    #ff9b20;
+}
+
+input{
+
+    width:100%;
+
+    padding:15px;
+
+    margin-top:20px;
+
+    border-radius:16px;
+
+    border:
+    1px solid
+    #ff5577;
+
+    background:
+    rgba(0,0,0,.55);
+
+    color:white;
+
+    text-align:center;
+
+    font-size:20px;
+
+    outline:none;
+}
+
+button{
+
+    margin-top:18px;
+
+    padding:14px 32px;
+
+    border:0;
+
+    border-radius:30px;
+
+    background:
+    linear-gradient(
+        45deg,
+        #ff416c,
+        #ff758c
+    );
+
+    color:white;
+
+    font-size:17px;
+
+    font-weight:bold;
+
+    cursor:pointer;
+}
+
+.message{
+
+    line-height:2.1;
+
+    color:#ffe9ee;
+
+    font-size:16px;
+}
+
+.photo{
+
+    width:100%;
+
+    max-width:340px;
+
+    margin:22px auto;
+
+    display:block;
+
+    border-radius:22px;
+
+    border:2px solid
+    rgba(255,200,100,.7);
+
+    box-shadow:
+    0 0 35px
+    rgba(255,150,0,.35);
+}
+
+#passwordPage,
+#birthdayPage{
+
+    display:none;
+}
+
+
+/* ==========================================
+   گل‌ها در جلوی صفحه
+========================================== */
+
+.flower-layer{
+
+    position:fixed;
+
+    inset:0;
+
+    pointer-events:none;
+
+    overflow:hidden;
+
+    z-index:10000;
+}
+
+.flower{
+
+    position:absolute;
+
+    top:-80px;
+
+    animation:
+    flowerFall linear forwards;
+
+    filter:
+    drop-shadow(
+        0 0 10px
+        rgba(255,180,60,.8)
+    );
+}
+
+@keyframes flowerFall{
+
+    0%{
+        transform:
+        translateY(-100px)
+        rotate(0deg);
+
+        opacity:0;
+    }
+
+    10%{
+        opacity:1;
+    }
+
+    100%{
+        transform:
+        translateY(115vh)
+        rotate(720deg);
+
+        opacity:.95;
+    }
+}
+
+
+/* ==========================================
+   قلب‌ها کاملاً جلو
+========================================== */
+
+.heart-layer{
+
+    position:fixed;
+
+    inset:0;
+
+    pointer-events:none;
+
+    overflow:hidden;
+
+    z-index:11000;
+}
+
+.heart{
+
+    position:absolute;
+
+    top:-60px;
+
+    animation:
+    heartFall linear forwards;
+
+    filter:
+    drop-shadow(
+        0 0 10px
+        rgba(255,40,100,.8)
+    );
+}
+
+@keyframes heartFall{
+
+    0%{
+
+        transform:
+        translateY(-70px)
+        rotate(0deg);
+
+        opacity:0;
+    }
+
+    10%{
+        opacity:1;
+    }
+
+    100%{
+
+        transform:
+        translateY(115vh)
+        rotate(720deg);
+
+        opacity:0;
+    }
+}
+
 </style>
+
 </head>
+
 <body>
-<div id="scene"></div>
 
-<div class="container" id="giftBox">
- <div class="gift" onclick="openGift()">🎁</div>
- <p>🌻 برای باز کردن هدیه کلیک کن 🌻</p>
+<div class="flower-layer"
+id="flowers"></div>
+
+<div class="heart-layer"
+id="hearts"></div>
+
+
+<div class="container"
+id="giftPage">
+
+    <div class="gift"
+    onclick="showPassword()">
+
+        🎁
+
+    </div>
+
+    <div class="openText">
+
+        🌻 برای باز کردن هدیه کلیک کن 🌻
+
+    </div>
+
 </div>
 
-<div class="container" id="password">
- <div class="card">
-  <h1>🔐 هدیه مخصوص تو</h1>
-  <p>تاریخ تولدت رو وارد کن ❤️</p>
-  <input id="pass" type="password" placeholder="رمز مخصوص">
-  <button onclick="check()">🌻 باز کردن هدیه</button>
-  <p id="err" style="display:none;color:#ff6685">❌ رمز اشتباهه</p>
- </div>
+
+<div class="container"
+id="passwordPage">
+
+    <div class="card">
+
+        <h1>
+            🔐 هدیه مخصوص تو
+        </h1>
+
+        <p>
+            تاریخ تولدت رو وارد کن ❤️
+        </p>
+
+        <input
+        id="password"
+        type="password"
+        maxlength="20"
+        placeholder="رمز مخصوص">
+
+        <button
+        onclick="checkPassword()">
+
+            🌻 باز کردن هدیه
+
+        </button>
+
+        <p
+        id="error"
+        style="
+        display:none;
+        color:#ff5577;
+        margin-top:15px">
+
+            ❌ رمز اشتباهه
+
+        </p>
+
+    </div>
+
 </div>
 
-<div class="container" id="birthday">
- <div class="card">
-  <h1>🌻🎂 تولدت مبارک نسا 🎂🌻</h1>
-  <p>
-  امروز فقط تولد تو نیست؛
-  روزیه که دنیا یک دلیل تازه برای زیباتر شدن پیدا کرد. ❤️
-  <br><br>
-  تو یکی از قشنگ‌ترین اتفاق‌های زندگی منی.
-  <br><br>
-  🌻 امیدوارم همیشه بخندی، خوشحال باشی
-  و به تمام آرزوهات برسی.
-  <br><br>
-  ❤️ تولدت مبارک عشق من ❤️
-  <br>
-  🌻 دوستت دارم 🌻
-  </p>
-  <img class="photo" src="https://i.postimg.cc/5tDhyRgM/IMG-20260318-184739-714.jpg">
- </div>
+
+<div class="container"
+id="birthdayPage">
+
+    <div class="card">
+
+        <h1>
+
+            🌻🎂 تولدت مبارک نسا 🎂🌻
+
+        </h1>
+
+        <div class="message">
+
+            امروز روزی نیست که فقط تولد تو را جشن بگیرم...
+
+            <br>
+
+            امروز روزی است که
+            از بودن تو در این دنیا خوشحالم. ❤️
+
+            <br><br>
+
+            تو یکی از زیباترین
+            اتفاق‌های زندگی منی.
+
+            <br><br>
+
+            🌻 امیدوارم همیشه بخندی،
+            همیشه خوشحال باشی
+            و به تمام آرزوهایت برسی.
+
+            <br><br>
+
+            ❤️ تولدت مبارک عشق من ❤️
+
+            <br>
+
+            🌻 دوستت دارم 🌻
+
+        </div>
+
+        <img
+        class="photo"
+        src="https://i.postimg.cc/5tDhyRgM/IMG-20260318-184739-714.jpg">
+
+    </div>
+
 </div>
+
 
 <script>
-const PASSWORD = "1386";
 
-function openGift(){
- document.getElementById("giftBox").style.display="none";
- document.getElementById("password").style.display="block";
- document.getElementById("pass").focus();
+const PASSWORD =
+"1386";
+
+
+function showPassword(){
+
+    document.getElementById(
+        "giftPage"
+    ).style.display="none";
+
+    document.getElementById(
+        "passwordPage"
+    ).style.display="block";
+
+    document.getElementById(
+        "password"
+    ).focus();
 }
 
-function check(){
- if(document.getElementById("pass").value.trim()===PASSWORD){
-  document.getElementById("password").style.display="none";
-  document.getElementById("birthday").style.display="block";
-  startFlowers();
- }else document.getElementById("err").style.display="block";
+
+function checkPassword(){
+
+    const input =
+    document.getElementById(
+        "password"
+    ).value.trim();
+
+    if(input === PASSWORD){
+
+        document.getElementById(
+            "passwordPage"
+        ).style.display="none";
+
+        document.getElementById(
+            "birthdayPage"
+        ).style.display="block";
+
+        startFlowers();
+
+        startHearts();
+
+    }else{
+
+        document.getElementById(
+            "error"
+        ).style.display="block";
+
+    }
 }
+
+
+/* گل‌های فراوان */
 
 function startFlowers(){
- const scene=document.getElementById("scene");
- const flowers=["🌻","🌻","🌻","🌼","🌺","🌸","🌷","🪻","🌹","💐"];
- const hearts=["❤️","💖","💕","💗","💘","❤️‍🔥","✨"];
- for(let i=0;i<75;i++){
-  let x=document.createElement("div");
-  x.className="fall";
-  x.textContent=flowers[Math.floor(Math.random()*flowers.length)];
-  x.style.left=Math.random()*100+"%";
-  x.style.fontSize=(18+Math.random()*35)+"px";
-  x.style.animationDuration=(5+Math.random()*7)+"s";
-  x.style.animationDelay=Math.random()*4+"s";
-  scene.appendChild(x);
-  setTimeout(()=>x.remove(),15000);
- }
- for(let i=0;i<55;i++){
-  let x=document.createElement("div");
-  x.className="fall";
-  x.textContent=hearts[Math.floor(Math.random()*hearts.length)];
-  x.style.left=Math.random()*100+"%";
-  x.style.fontSize=(14+Math.random()*28)+"px";
-  x.style.animationDuration=(4+Math.random()*6)+"s";
-  x.style.animationDelay=Math.random()*4+"s";
-  scene.appendChild(x);
-  setTimeout(()=>x.remove(),14000);
- }
+
+    const flowers=[
+        "🌻",
+        "🌼",
+        "🌺",
+        "🌸",
+        "💐",
+        "🌷",
+        "🪻",
+        "🌹"
+    ];
+
+    const container =
+    document.getElementById(
+        "flowers"
+    );
+
+    for(let i=0;i<90;i++){
+
+        const flower =
+        document.createElement(
+            "div"
+        );
+
+        flower.className="flower";
+
+        flower.textContent =
+        flowers[
+            Math.floor(
+                Math.random()
+                * flowers.length
+            )
+        ];
+
+        flower.style.left =
+        Math.random()*100+"%";
+
+        flower.style.fontSize =
+        (18+Math.random()*35)+"px";
+
+        flower.style.animationDuration =
+        (5+Math.random()*8)+"s";
+
+        flower.style.animationDelay =
+        Math.random()*6+"s";
+
+        container.appendChild(
+            flower
+        );
+
+        setTimeout(
+            ()=>{
+                flower.remove();
+            },
+            16000
+        );
+    }
 }
-document.getElementById("pass").addEventListener("keydown",e=>{if(e.key==="Enter")check()});
+
+
+/* قلب‌های فراوان */
+
+function startHearts(){
+
+    const hearts=[
+        "❤️",
+        "💖",
+        "💕",
+        "💗",
+        "💘",
+        "❤️‍🔥"
+    ];
+
+    const container =
+    document.getElementById(
+        "hearts"
+    );
+
+    for(let i=0;i<80;i++){
+
+        const heart =
+        document.createElement(
+            "div"
+        );
+
+        heart.className="heart";
+
+        heart.textContent =
+        hearts[
+            Math.floor(
+                Math.random()
+                * hearts.length
+            )
+        ];
+
+        heart.style.left =
+        Math.random()*100+"%";
+
+        heart.style.fontSize =
+        (14+Math.random()*30)+"px";
+
+        heart.style.animationDuration =
+        (4+Math.random()*7)+"s";
+
+        heart.style.animationDelay =
+        Math.random()*6+"s";
+
+        container.appendChild(
+            heart
+        );
+
+        setTimeout(
+            ()=>{
+                heart.remove();
+            },
+            15000
+        );
+    }
+}
+
+
+document.getElementById(
+    "password"
+).addEventListener(
+    "keydown",
+    function(e){
+
+        if(e.key==="Enter"){
+            checkPassword();
+        }
+
+    }
+);
+
 </script>
+
 </body>
 </html>
 """
 
+
+# ============================================================
+# صفحه عشق
+# ============================================================
+
 LOVE_PAGE = r"""
-<!doctype html>
-<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>❤️ I Love You Nesa ❤️</title>
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width,initial-scale=1">
+
+<title>I LOVE YOU NESA ❤️</title>
+
 <style>
-*{box-sizing:border-box}body{margin:0;background:#030303;min-height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden}
-canvas{max-width:100vw;max-height:100vh}.txt{position:fixed;bottom:18px;width:100%;text-align:center;color:#ff6685;font:14px Arial;letter-spacing:4px;text-shadow:0 0 18px #f24}
-</style></head>
-<body>
-<canvas id="c"></canvas><div class="txt">❤️ AHU GOOZLUM ❤️</div>
-<script>
-const url="https://i.postimg.cc/5tDhyRgM/IMG-20260318-184739-714.jpg";
-const c=document.getElementById("c"),x=c.getContext("2d"),img=new Image();
-img.crossOrigin="anonymous";img.src=url;
-img.onload=()=>{
- c.width=img.width;c.height=img.height;x.drawImage(img,0,0);
- const p=x.getImageData(0,0,c.width,c.height).data;
- x.fillStyle="#000";x.fillRect(0,0,c.width,c.height);
- x.textAlign="center";x.textBaseline="middle";x.font="7px Arial";
- const words=["I","LOVE","YOU","NESA"],step=7;
- for(let y=0;y<c.height;y+=step)for(let z=0;z<c.width;z+=step){
-  let i=(y*c.width+z)*4,b=(p[i]+p[i+1]+p[i+2])/3;
-  if(b>240)continue;
-  x.fillStyle=`rgb(${p[i]},${p[i+1]},${p[i+2]})`;
-  x.fillText(words[(z+y)%words.length],z,y);
- }
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
 }
-</script></body></html>
+
+body{
+
+    min-height:100vh;
+
+    background:#030303;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    overflow:hidden;
+}
+
+canvas{
+
+    max-width:100vw;
+
+    max-height:100vh;
+
+    display:block;
+}
+
+.title{
+
+    position:fixed;
+
+    top:20px;
+
+    width:100%;
+
+    text-align:center;
+
+    color:#ff6688;
+
+    font-family:Arial;
+
+    font-size:18px;
+
+    letter-spacing:5px;
+
+    text-shadow:
+    0 0 15px #ff2244,
+    0 0 35px #ff2244;
+
+    z-index:20;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="title">
+
+❤️ I LOVE YOU NESA ❤️
+
+</div>
+
+<canvas id="canvas"></canvas>
+
+<script>
+
+const imageUrl =
+"https://i.postimg.cc/5tDhyRgM/IMG-20260318-184739-714.jpg";
+
+const canvas =
+document.getElementById("canvas");
+
+const ctx =
+canvas.getContext("2d");
+
+const img =
+new Image();
+
+img.crossOrigin="anonymous";
+
+img.src=imageUrl;
+
+
+img.onload=function(){
+
+    const maxWidth =
+    Math.min(
+        window.innerWidth,
+        900
+    );
+
+    const scale =
+    maxWidth / img.width;
+
+    canvas.width =
+    maxWidth;
+
+    canvas.height =
+    img.height * scale;
+
+    ctx.drawImage(
+        img,
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+    const pixels =
+    ctx.getImageData(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    ).data;
+
+    ctx.fillStyle="#020202";
+
+    ctx.fillRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+    const words=[
+        "I",
+        "LOVE",
+        "YOU",
+        "NESA"
+    ];
+
+    ctx.textAlign="center";
+    ctx.textBaseline="middle";
+    ctx.font="7px Arial";
+
+    const step=7;
+
+    for(
+        let y=0;
+        y<canvas.height;
+        y+=step
+    ){
+
+        for(
+            let x=0;
+            x<canvas.width;
+            x+=step
+        ){
+
+            const index=
+            (y*canvas.width+x)*4;
+
+            const r=
+            pixels[index];
+
+            const g=
+            pixels[index+1];
+
+            const b=
+            pixels[index+2];
+
+            const brightness=
+            (r+g+b)/3;
+
+            if(brightness<25){
+                continue;
+            }
+
+            ctx.fillStyle=
+            `rgb(${r},${g},${b})`;
+
+            const word=
+            words[
+                Math.floor(
+                    (x+y)/step
+                )
+                % words.length
+            ];
+
+            ctx.fillText(
+                word,
+                x,
+                y
+            );
+        }
+    }
+};
+
+</script>
+
+</body>
+
+</html>
 """
 
-@app.route("/", methods=["GET","POST"])
+
+# ============================================================
+# Webhook
+# ============================================================
+
+@app.route("/", methods=["GET", "POST"])
 def webhook():
-    if request.method == "POST":
-        try:
-            data=request.get_json(silent=True) or {}
-            if "message" in data:
-                msg=data["message"]
-                chat_id=msg["chat"]["id"]
-                text=msg.get("text","")
-                handle_message(chat_id,text)
-        except Exception as e:
-            print("Webhook error:",e)
-    return "OK",200
+
+    if request.method == "GET":
+        return "❤️ Bot is alive.", 200
+
+    try:
+
+        data =
+        request.get_json(
+            silent=True
+        )
+
+        if not data:
+            return "OK", 200
+
+        message =
+        data.get("message")
+
+        if not message:
+            return "OK", 200
+
+        chat =
+        message.get("chat", {})
+
+        chat_id =
+        chat.get("id")
+
+        text =
+        message.get("text", "")
+
+        if chat_id is not None:
+
+            threading.Thread(
+                target=handle_message,
+                args=(chat_id, text),
+                daemon=True
+            ).start()
+
+    except Exception as e:
+
+        print(
+            "Webhook error:",
+            e
+        )
+
+    return "OK", 200
+
+
+# ============================================================
+# صفحات سایت
+# ============================================================
 
 @app.route("/love")
 def love():
-    return render_template_string(LOVE_PAGE)
+
+    return render_template_string(
+        LOVE_PAGE
+    )
+
 
 @app.route("/birthday_surprise.html")
 def birthday():
-    return render_template_string(BIRTHDAY_PAGE)
+
+    return render_template_string(
+        BIRTHDAY_PAGE
+    )
+
 
 @app.route("/health")
 def health():
-    return "OK",200
 
-def birthday_timer():
-    sent=False
-    while True:
-        try:
-            now=get_current_iran_time()
-            if now.month==BIRTH_MONTH and now.day==BIRTH_DAY and now.hour==BIRTH_HOUR and now.minute==BIRTH_MINUTE:
-                if not sent:
-                    send_message(YOUR_CHAT_ID,BIRTHDAY_MESSAGE)
-                    sent=True
-            else:
-                sent=False
-        except Exception as e:
-            print("timer:",e)
-        time.sleep(30)
+    return {
+        "status": "ok",
+        "bot": bool(TOKEN),
+        "time": iran_now().isoformat()
+    }, 200
 
-if __name__=="__main__":
-    print("❤️ Bot starting...")
-    threading.Thread(target=birthday_timer,daemon=True).start()
-    port=int(os.environ.get("PORT","10000"))
-    app.run(host="0.0.0.0",port=port,debug=False)
+
+# ============================================================
+# Webhook Telegram
+# ============================================================
+
+def set_webhook():
+
+    if not TOKEN:
+        print(
+            "⚠️ BOT_TOKEN تنظیم نشده است."
+        )
+        return
+
+    webhook_url = (
+        SITE_URL + "/"
+    )
+
+    try:
+
+        r = requests.post(
+            telegram_url(
+                "setWebhook"
+            ),
+            json={
+                "url": webhook_url,
+                "drop_pending_updates": False
+            },
+            timeout=15
+        )
+
+        print(
+            "Webhook:",
+            r.status_code,
+            r.text
+        )
+
+    except Exception as e:
+
+        print(
+            "Webhook error:",
+            e
+        )
+
+
+# ============================================================
+# اجرای برنامه
+# ============================================================
+
+if __name__ == "__main__":
+
+    print(
+        "🚀 Bot starting..."
+    )
+
+    print(
+        "🌐 SITE_URL:",
+        SITE_URL
+    )
+
+    print(
+        "❤️ Love:",
+        SITE_URL + "/love"
+    )
+
+    print(
+        "🎂 Birthday:",
+        SITE_URL +
+        "/birthday_surprise.html"
+    )
+
+    print(
+        "🤖 Token:",
+        "OK" if TOKEN else "MISSING"
+    )
+
+    # ست کردن Webhook
+    set_webhook()
+
+    # تایمر تولد
+    threading.Thread(
+        target=birthday_timer,
+        daemon=True
+    ).start()
+
+    port = int(
+        os.environ.get(
+            "PORT",
+            "10000"
+        )
+    )
+
+    app.run(
+        host="0.0.0.0",
+        port=port,
+        debug=False,
+        threaded=True
+    )
