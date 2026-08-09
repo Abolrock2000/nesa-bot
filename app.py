@@ -1755,28 +1755,19 @@ def webhook():
 
     try:
 
-        data =
-        request.get_json(
-            silent=True
-        )
+        data = request.get_json(silent=True)  # ✅ خطا رفع شد
 
         if not data:
             return "OK", 200
 
-        message =
-        data.get("message")
+        message = data.get("message")
 
         if not message:
             return "OK", 200
 
-        chat =
-        message.get("chat", {})
-
-        chat_id =
-        chat.get("id")
-
-        text =
-        message.get("text", "")
+        chat = message.get("chat", {})
+        chat_id = chat.get("id")
+        text = message.get("text", "")
 
         if chat_id is not None:
 
@@ -1788,10 +1779,7 @@ def webhook():
 
     except Exception as e:
 
-        print(
-            "Webhook error:",
-            e
-        )
+        print("Webhook error:", e)
 
     return "OK", 200
 
@@ -1833,21 +1821,15 @@ def health():
 def set_webhook():
 
     if not TOKEN:
-        print(
-            "⚠️ BOT_TOKEN تنظیم نشده است."
-        )
+        print("⚠️ BOT_TOKEN تنظیم نشده است.")
         return
 
-    webhook_url = (
-        SITE_URL + "/"
-    )
+    webhook_url = SITE_URL + "/"
 
     try:
 
         r = requests.post(
-            telegram_url(
-                "setWebhook"
-            ),
+            telegram_url("setWebhook"),
             json={
                 "url": webhook_url,
                 "drop_pending_updates": False
@@ -1855,18 +1837,11 @@ def set_webhook():
             timeout=15
         )
 
-        print(
-            "Webhook:",
-            r.status_code,
-            r.text
-        )
+        print("Webhook:", r.status_code, r.text)
 
     except Exception as e:
 
-        print(
-            "Webhook error:",
-            e
-        )
+        print("Webhook error:", e)
 
 
 # ============================================================
@@ -1875,30 +1850,11 @@ def set_webhook():
 
 if __name__ == "__main__":
 
-    print(
-        "🚀 Bot starting..."
-    )
-
-    print(
-        "🌐 SITE_URL:",
-        SITE_URL
-    )
-
-    print(
-        "❤️ Love:",
-        SITE_URL + "/love"
-    )
-
-    print(
-        "🎂 Birthday:",
-        SITE_URL +
-        "/birthday_surprise.html"
-    )
-
-    print(
-        "🤖 Token:",
-        "OK" if TOKEN else "MISSING"
-    )
+    print("🚀 Bot starting...")
+    print("🌐 SITE_URL:", SITE_URL)
+    print("❤️ Love:", SITE_URL + "/love")
+    print("🎂 Birthday:", SITE_URL + "/birthday_surprise.html")
+    print("🤖 Token:", "OK" if TOKEN else "MISSING")
 
     # ست کردن Webhook
     set_webhook()
@@ -1909,12 +1865,7 @@ if __name__ == "__main__":
         daemon=True
     ).start()
 
-    port = int(
-        os.environ.get(
-            "PORT",
-            "10000"
-        )
-    )
+    port = int(os.environ.get("PORT", "10000"))
 
     app.run(
         host="0.0.0.0",
