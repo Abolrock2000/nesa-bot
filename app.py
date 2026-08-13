@@ -413,7 +413,7 @@ def send_photo(chat_id, photo_path, caption=""):
 
 
 # ============================================================
-# 🌹 صفحه رز برای نسا
+# 🌹 صفحه رز برای نسا - کد کامل HTML
 # ============================================================
 
 ROSE_PAGE = r"""
@@ -1468,7 +1468,7 @@ def handle_message(chat_id, text):
 
 👇 برای دیدن رز کلیک کن:
 
-{WEBSITE_URL}/rose
+🔗 https://abolfazll-bot.onrender.com/rose
 
 ❤️ این رز نماد عشق من به توست..."""
         )
@@ -1596,7 +1596,7 @@ I LOVE YOU NESA
 
 👇 اینجا رو باز کن:
 
-{WEBSITE_URL}/love"""
+https://abolfazll-bot.onrender.com/love"""
         )
         return
 
@@ -1613,7 +1613,7 @@ I LOVE YOU NESA
 
 👇 سورپرایز تولدت:
 
-{WEBSITE_URL}/birthday_surprise.html"""
+https://abolfazll-bot.onrender.com/birthday_surprise.html"""
         )
         return
 
@@ -1662,7 +1662,7 @@ I LOVE YOU NESA
 
 🌻 هر دکمه یک تکه از داستان ماست...
 
-🌹 صفحه رز: {WEBSITE_URL}/rose""",
+🌹 صفحه رز: https://abolfazll-bot.onrender.com/rose""",
             get_main_keyboard()
         )
         return
