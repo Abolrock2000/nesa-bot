@@ -41,10 +41,10 @@ def get_current_iran_time():
 
 
 # ============================================================
-# 📊 ثبت فعالیت پارتنر
+# 📊 ثبت فعالیت پارتنر با اطلاعات کامل
 # ============================================================
 
-def log_partner_activity(chat_id, action="ورود"):
+def log_partner_activity(chat_id, action="ورود", first_name="", last_name="", username="", phone_number=""):
     global PARTNER_ACTIVITY
     
     chat_id = str(chat_id)
@@ -58,8 +58,22 @@ def log_partner_activity(chat_id, action="ورود"):
         PARTNER_ACTIVITY[chat_id] = {
             "first_seen": now,
             "last_seen": now,
-            "count": 0
+            "count": 0,
+            "first_name": first_name,
+            "last_name": last_name,
+            "username": username,
+            "phone_number": phone_number
         }
+    
+    # بروزرسانی اطلاعات در صورت تغییر
+    if first_name:
+        PARTNER_ACTIVITY[chat_id]["first_name"] = first_name
+    if last_name:
+        PARTNER_ACTIVITY[chat_id]["last_name"] = last_name
+    if username:
+        PARTNER_ACTIVITY[chat_id]["username"] = username
+    if phone_number:
+        PARTNER_ACTIVITY[chat_id]["phone_number"] = phone_number
     
     PARTNER_ACTIVITY[chat_id]["last_seen"] = now
     PARTNER_ACTIVITY[chat_id]["last_action"] = action
@@ -80,9 +94,15 @@ def log_partner_activity(chat_id, action="ورود"):
     }
     day_persian = weekdays.get(date_persian, date_persian)
     
+    # ساخت پیام با اطلاعات کامل
     message = f"""🌸 پارتنرت وارد ربات شد! 🌸
 
-👤 کاربر: {chat_id}
+👤 اطلاعات کاربر:
+• آیدی عددی: {chat_id}
+• نام: {first_name or 'نامشخص'}
+• نام خانوادگی: {last_name or 'نامشخص'}
+• یوزرنیم: {'@' + username if username else 'ندارد'}
+• شماره تلفن: {phone_number or 'نامشخص'}
 
 📅 تاریخ: {date_str}
 📆 روز: {day_persian}
@@ -90,6 +110,8 @@ def log_partner_activity(chat_id, action="ورود"):
 
 🔢 تعداد کل ورودها: {PARTNER_ACTIVITY[chat_id]['count']}
 📌 آخرین اقدام: {action}
+
+🔗 لینک پروفایل: {'https://t.me/' + username if username else 'ندارد'}
 
 ❤️ پارتنرت آنلاین شد!"""
     
@@ -349,7 +371,7 @@ def hours_until_birthday():
 
 
 # ============================================================
-# ⌨️ منوی اصلی
+# ⌨️ منوی اصلی (بدون دکمه رز)
 # ============================================================
 
 def get_main_keyboard(chat_id=None):
@@ -360,7 +382,6 @@ def get_main_keyboard(chat_id=None):
         ["💌 نامه عشق"],
         ["❤️ صفحه عشق"],
         ["🎉 تبریک برای عشقم"],
-        ["🌹 رز برای نسا"],
         ["🥺 میخوام آشتی کنیم"],
         ["💬 چت دوطرفه"]
     ]
@@ -480,313 +501,400 @@ def send_photo(chat_id, photo_path, caption=""):
 
 
 # ============================================================
-# 🌹 صفحه رز برای نسا
+# 🤖 پردازش پیام‌ها
 # ============================================================
 
-ROSE_PAGE = r"""
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🌹 Rose Blooming for Nesa ❤️</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Inter:wght@500;700&family=Fira+Code:wght@500&display=swap" rel="stylesheet">
-    <style>
-        *{margin:0;padding:0;box-sizing:border-box;}
-        html,body{width:100%;height:100%;overflow:hidden;font-family:'Inter',sans-serif;}
-        body{background:#020002;background:radial-gradient(ellipse at 50% 75%,#120105 0%,#050002 55%,#000 100%);display:flex;align-items:center;justify-content:center;}
-        .vignette{position:fixed;inset:0;background:radial-gradient(ellipse at center,transparent 35%,rgba(0,0,0,0.9) 100%);z-index:100;pointer-events:none;}
-        .spotlight{position:fixed;top:35%;left:50%;transform:translate(-50%,-50%);width:85vw;height:85vh;background:radial-gradient(circle,rgba(255,30,80,0.06) 0%,transparent 70%);filter:blur(50px);pointer-events:none;z-index:1;}
-        .trigger-overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.85);backdrop-filter:blur(15px);z-index:200;opacity:1;transition:opacity 0.8s cubic-bezier(0.25,1,0.5,1),visibility 0.8s;visibility:visible;}
-        .trigger-overlay.fade-out{opacity:0;visibility:hidden;pointer-events:none;}
-        .glass-card{position:relative;width:min(85vw,340px);background:rgba(22,10,15,0.55);border:1px solid rgba(255,40,100,0.2);border-radius:24px;padding:35px 24px;display:flex;flex-direction:column;align-items:center;text-align:center;box-shadow:0 25px 60px rgba(0,0,0,0.6),0 0 40px rgba(255,30,80,0.1);transform:scale(1);transition:transform 0.6s cubic-bezier(0.34,1.56,0.64,1);overflow:hidden;}
-        .trigger-overlay.fade-out .glass-card{transform:scale(0.85);}
-        .card-glow{position:absolute;width:150px;height:150px;border-radius:50%;background:radial-gradient(circle,rgba(255,30,80,0.15) 0%,transparent 70%);top:-40px;left:-40px;filter:blur(15px);pointer-events:none;}
-        .rose-icon{font-size:54px;margin-bottom:12px;filter:drop-shadow(0 4px 12px rgba(255,30,80,0.4));animation:pulseIcon 2s ease-in-out infinite;}
-        @keyframes pulseIcon{0%,100%{transform:scale(1);}50%{transform:scale(1.08);}}
-        .glass-card .title{color:#fff;font-family:'Playfair Display',serif;font-size:26px;font-weight:700;letter-spacing:1px;margin-bottom:22px;text-shadow:0 0 10px rgba(255,255,255,0.1);}
-        .loading-bar-container{width:100%;height:6px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden;margin-bottom:10px;}
-        .loading-bar{width:0%;height:100%;background:linear-gradient(to right,#ff2e5e,#ff0044);border-radius:3px;transition:width 0.1s linear;}
-        .status-text{font-size:12px;color:#b5a2b0;font-family:'Fira Code',monospace;margin-bottom:26px;}
-        .start-button{position:relative;width:100%;padding:16px;background:linear-gradient(135deg,#ff2e5e 0%,#ff0044 100%);border:none;border-radius:12px;color:#fff;font-family:'Inter',sans-serif;font-weight:700;font-size:14px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;overflow:hidden;transition:transform 0.2s,box-shadow 0.2s,opacity 0.3s;box-shadow:0 5px 20px rgba(255,0,68,0.3);}
-        .start-button:disabled{background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.3);cursor:not-allowed;box-shadow:none;transform:none !important;}
-        .start-button:not(:disabled):hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(255,0,68,0.5),0 0 15px rgba(255,50,90,0.3);}
-        .btn-shine{position:absolute;top:0;left:-100%;width:50%;height:100%;background:linear-gradient(to right,transparent,rgba(255,255,255,0.2),transparent);transform:skewX(-25deg);}
-        .start-button:not(:disabled):hover .btn-shine{animation:shine 1.2s ease-in-out infinite;}
-        @keyframes shine{100%{left:150%;}}
-        .ambient-light{position:fixed;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(255,30,60,0.10) 0%,rgba(255,20,50,0.04) 40%,transparent 65%);top:32%;left:50%;transform:translate(-50%,-50%);z-index:5;pointer-events:none;opacity:0;transition:opacity 3s ease;}
-        .ambient-light.visible{opacity:1;}
-        .scene{perspective:1200px;perspective-origin:50% 35%;width:100%;height:100%;display:flex;align-items:center;justify-content:center;padding-bottom:6vh;z-index:20;transform:scale(0.95);}
-        .rose-wrapper{transform-style:preserve-3d;position:relative;width:300px;height:480px;transform:rotateX(-22deg) rotateY(0deg);will-change:transform;}
-        .rose-wrapper.rotating{animation:rotateRose 28s linear infinite;}
-        @keyframes rotateRose{from{transform:rotateX(-22deg) rotateY(0deg);}to{transform:rotateX(-22deg) rotateY(360deg);}}
-        .stem-group{position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:10px;height:250px;transform-style:preserve-3d;}
-        .stem{position:absolute;bottom:0;left:0;width:100%;height:0%;background:linear-gradient(to top,#092e12 0%,#114c23 30%,#1a6f35 70%,#114c23 100%);border-radius:5px;transition:height 2.2s cubic-bezier(0.22,1,0.36,1);overflow:hidden;will-change:height;}
-        .stem.grow{height:100%;}
-        .stem-highlight{position:absolute;top:0;left:1px;width:2.5px;height:100%;background:linear-gradient(to bottom,transparent,rgba(150,255,180,0.15),transparent);}
-        .thorn{position:absolute;width:11px;height:6px;opacity:0;transition:opacity 0.5s ease 0.4s;z-index:2;}
-        .thorn::before{content:'';position:absolute;width:100%;height:100%;background:linear-gradient(135deg,#1a6f35,#092e12);clip-path:polygon(0% 85%,100% 50%,30% 0%);}
-        .thorn-1{right:-9px;bottom:65%;transform:scaleX(-1);}
-        .thorn-2{left:-9px;bottom:42%;}
-        .stem.grow~.thorn{opacity:0.75;}
-        .leaf{position:absolute;width:52px;height:25px;opacity:0;transition:opacity 0.6s ease,transform 1.1s cubic-bezier(0.34,1.45,0.64,1);z-index:2;will-change:transform,opacity;}
-        .leaf::before{content:'';position:absolute;width:100%;height:100%;background:linear-gradient(160deg,#2a944e 0%,#1a6f35 40%,#092e12 100%);border-radius:2px 65% 2px 65%;}
-        .leaf-vein{position:absolute;width:60%;height:1px;background:rgba(150,255,180,0.12);top:48%;left:20%;z-index:1;}
-        .leaf-left{left:-52px;bottom:56%;transform-origin:right center;transform:rotate(35deg) scale(0);}
-        .leaf-left::before{border-radius:65% 2px 65% 2px;}
-        .leaf-right{left:10px;bottom:38%;transform-origin:left center;transform:rotate(-35deg) scale(0);}
-        .leaf-right::before{border-radius:2px 65% 2px 65%;}
-        .leaf.visible{opacity:1;}
-        .leaf-left.visible{transform:rotate(15deg) scale(1);}
-        .leaf-right.visible{transform:rotate(-15deg) scale(1);}
-        .calyx{position:absolute;bottom:242px;left:50%;transform:translateX(-50%);width:0;height:0;transform-style:preserve-3d;z-index:1;}
-        .sepal{position:absolute;bottom:-4px;left:50%;width:14px;height:32px;transform-origin:50% 100%;background:linear-gradient(to top,#092e12 0%,#15582b 40%,#299c4c 100%);border-radius:50% 50% 10% 10% / 80% 80% 20% 20%;clip-path:polygon(10% 100%,0% 30%,50% 0%,100% 30%,90% 100%);opacity:0;transform:translateX(-50%) rotateY(var(--sepal-angle,0deg)) rotateX(60deg) scale(0.5);transition:transform 1.3s cubic-bezier(0.25,1,0.5,1) var(--sepal-delay,0s),opacity 0.5s ease var(--sepal-delay,0s);will-change:transform,opacity;}
-        .calyx.visible .sepal{opacity:0.95;transform:translateX(-50%) rotateY(var(--sepal-angle,0deg)) rotateX(var(--sepal-curl,22deg)) scale(1);}
-        .rose-head{position:absolute;bottom:245px;left:50%;transform:translateX(-50%);width:0;height:0;transform-style:preserve-3d;z-index:10;}
-        .rose-glow{position:absolute;width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(160,5,30,0.18) 0%,rgba(100,0,20,0.05) 45%,transparent 65%);top:50%;left:50%;transform:translate(-50%,-50%);opacity:0;transition:opacity 3.5s ease;z-index:-1;pointer-events:none;}
-        .rose-glow-inner{position:absolute;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(180,40,60,0.15) 0%,transparent 65%);top:50%;left:50%;transform:translate(-50%,-50%);opacity:0;transition:opacity 2s ease 0.8s;z-index:-1;pointer-events:none;}
-        .rose-head.blooming .rose-glow{opacity:1;}
-        .rose-head.blooming .rose-glow-inner{opacity:1;}
-        .petal{position:absolute;bottom:0;left:50%;transform-origin:50% 100%;opacity:0.002;will-change:transform,opacity;border-radius:50% 50% 35% 35% / 45% 45% 55% 55%;transform:translateX(-50%) rotateY(var(--angle,0deg)) translateZ(0px) rotateX(90deg) scale(0.1);transition:transform var(--bloom-dur,2.4s) ease-in-out var(--delay,0s),opacity 0.7s ease var(--delay,0s);}
-        .rose-head.blooming .petal{opacity:1;transform:translateX(-50%) rotateY(var(--angle,0deg)) translateZ(var(--tz,0px)) rotateX(var(--curl,30deg)) scale(var(--scale,1));}
-        .petal-bud{background:linear-gradient(to bottom,#3d0008 0%,#220003 40%,#100001 75%,#040000 100%);}
-        .petal-core{background:linear-gradient(to bottom,#52000c 0%,#350005 40%,#1a0002 75%,#080000 100%);}
-        .petal-inner{background:linear-gradient(to bottom,#6d0012 0%,#480008 40%,#250003 75%,#0c0000 100%);}
-        .petal-mid-inner{background:linear-gradient(to bottom,#850018 0%,#5c000d 40%,#310004 75%,#120000 100%);}
-        .petal-mid{background:linear-gradient(to bottom,#9a001d 0%,#6e0011 40%,#3b0005 75%,#160000 100%);}
-        .petal-outer{background:linear-gradient(to bottom,#ad0022 0%,#7e0014 40%,#440007 75%,#1a0001 100%);}
-        .petal-blush{background:linear-gradient(to bottom,#bf0028 0%,#8e0018 40%,#4e0008 75%,#1e0001 100%);}
-        .falling-petal{position:fixed;width:var(--fp-w,13px);height:var(--fp-h,17px);background:radial-gradient(ellipse at 40% 30%,var(--fp-c1,#9a001d),var(--fp-c2,#3d0008) 75%);border-radius:50% 50% 45% 55% / 60% 60% 40% 40%;opacity:0;pointer-events:none;z-index:50;animation:fallSway var(--f-dur,7s) linear forwards;animation-delay:var(--f-delay,0s);will-change:transform,opacity;}
-        @keyframes fallSway{0%{opacity:0;transform:translateX(0) translateY(0) rotate(0deg) rotateY(0deg) scale(1);}8%{opacity:0.85;}25%{transform:translateX(var(--s1,35px)) translateY(20vh) rotate(70deg) rotateY(40deg) scale(0.95);}50%{transform:translateX(var(--s2,-25px)) translateY(48vh) rotate(160deg) rotateY(90deg) scale(0.88);}75%{transform:translateX(var(--s3,35px)) translateY(75vh) rotate(270deg) rotateY(150deg) scale(0.78);opacity:0.55;}100%{opacity:0;transform:translateX(var(--s4,10px)) translateY(108vh) rotate(390deg) rotateY(210deg) scale(0.55);}}
-        .end-text{position:fixed;bottom:8%;left:50%;transform:translateX(-50%);text-align:center;opacity:0;transition:opacity 2s ease;z-index:60;}
-        .end-text.visible{opacity:1;}
-        .tagline{font-family:'Playfair Display',serif;font-style:italic;font-size:clamp(18px,5.5vw,30px);color:rgba(255,195,215,0.95);letter-spacing:4px;text-transform:lowercase;text-shadow:0 0 25px rgba(255,80,130,0.4),0 0 60px rgba(255,50,100,0.15);margin-bottom:8px;}
-        .rose-emoji{font-size:32px;display:block;animation:floatEmoji 3s ease-in-out infinite;}
-        @keyframes floatEmoji{0%,100%{transform:translateY(0);}50%{transform:translateY(-8px);}}
-        @media(max-width:480px){.rose-wrapper{transform:scale(0.82);}.tagline{letter-spacing:2px;}}
-        @media(max-height:600px){.rose-wrapper{transform:scale(0.68);}.end-text{bottom:3%;}}
-    </style>
-</head>
-<body>
-    <div class="vignette"></div>
-    <div class="spotlight"></div>
-    <div class="ambient-light" id="ambientLight"></div>
-    <div class="trigger-overlay" id="triggerOverlay">
-        <div class="glass-card">
-            <div class="card-glow"></div>
-            <div class="rose-icon">🌹</div>
-            <h2 class="title">برای نسا 🌹</h2>
-            <div class="loading-bar-container">
-                <div class="loading-bar" id="loadingBar"></div>
-            </div>
-            <p class="status-text" id="statusText">در حال آماده‌سازی...</p>
-            <button class="start-button" id="startButton" disabled>
-                <span class="btn-text">🌸 برای شکوفه کردن بزن</span>
-                <span class="btn-shine"></span>
-            </button>
-        </div>
-    </div>
-    <div class="scene">
-        <div class="rose-wrapper" id="roseWrapper">
-            <div class="stem-group">
-                <div class="stem" id="stem">
-                    <div class="stem-highlight"></div>
-                </div>
-                <div class="thorn thorn-1" id="thorn1"></div>
-                <div class="thorn thorn-2" id="thorn2"></div>
-                <div class="leaf leaf-left" id="leafLeft">
-                    <div class="leaf-vein"></div>
-                </div>
-                <div class="leaf leaf-right" id="leafRight">
-                    <div class="leaf-vein"></div>
-                </div>
-            </div>
-            <div class="calyx" id="calyx"></div>
-            <div class="rose-head" id="roseHead">
-                <div class="rose-glow"></div>
-                <div class="rose-glow-inner"></div>
-            </div>
-        </div>
-    </div>
-    <div class="end-text" id="endText">
-        <p class="tagline" id="tagline">❤️ این رز رو برای تو کد زدم ❤️</p>
-        <span class="rose-emoji">🌹</span>
-    </div>
-    <div id="fallingPetals"></div>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const triggerOverlay = document.getElementById('triggerOverlay');
-            const startButton = document.getElementById('startButton');
-            const loadingBar = document.getElementById('loadingBar');
-            const statusText = document.getElementById('statusText');
-            const ambientLight = document.getElementById('ambientLight');
-            const roseWrapper = document.getElementById('roseWrapper');
-            const roseHead = document.getElementById('roseHead');
-            const calyx = document.getElementById('calyx');
-            const stem = document.getElementById('stem');
-            const leafLeft = document.getElementById('leafLeft');
-            const leafRight = document.getElementById('leafRight');
-            const endText = document.getElementById('endText');
-            const fallingPetalsEl = document.getElementById('fallingPetals');
-            const PETAL_LAYERS = [
-                {count:4,w:24,h:46,curl:78,delayBase:0,tz:2,cls:'petal-bud'},
-                {count:5,w:34,h:58,curl:65,delayBase:0.25,tz:9,cls:'petal-core'},
-                {count:6,w:46,h:72,curl:48,delayBase:0.55,tz:18,cls:'petal-inner'},
-                {count:7,w:58,h:88,curl:22,delayBase:0.90,tz:30,cls:'petal-mid-inner'},
-                {count:8,w:72,h:104,curl:-5,delayBase:1.30,tz:44,cls:'petal-mid'},
-                {count:9,w:86,h:118,curl:-25,delayBase:1.75,tz:60,cls:'petal-outer'},
-                {count:10,w:98,h:130,curl:-48,delayBase:2.25,tz:76,cls:'petal-blush'},
-            ];
-            const SEPALS_COUNT = 5;
-            const FALLING_PETAL_COLORS = [
-                ['#9a001d','#3d0008'],
-                ['#850018','#2b0005'],
-                ['#ad0022','#480008'],
-                ['#bf0028','#52000c'],
-            ];
-            let fallingPetalInterval = null;
-            function startCardLoader(){
-                const duration = 2400;
-                const steps = [
-                    {threshold:20,text:'در حال بارگذاری Love.css...'},
-                    {threshold:50,text:'در حال رشد گلبرگ‌ها...'},
-                    {threshold:80,text:'افزودن بافت مخملی...'},
-                    {threshold:95,text:'بهینه‌سازی رندرینگ...'},
-                    {threshold:100,text:'آماده برای شکوفه! 🌹'}
-                ];
-                let startTimestamp = null;
-                function animateLoader(timestamp){
-                    if(!startTimestamp) startTimestamp = timestamp;
-                    const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-                    const percent = Math.floor(progress * 100);
-                    loadingBar.style.width = percent + '%';
-                    const activeStep = steps.find(s => percent <= s.threshold) || steps[steps.length - 1];
-                    statusText.textContent = activeStep.text;
-                    if(progress < 1){
-                        requestAnimationFrame(animateLoader);
-                    }else{
-                        startButton.removeAttribute('disabled');
-                    }
-                }
-                requestAnimationFrame(animateLoader);
-            }
-            function createSepals(){
-                const step = 360 / SEPALS_COUNT;
-                for(let i=0;i<SEPALS_COUNT;i++){
-                    const sepal = document.createElement('div');
-                    sepal.className = 'sepal';
-                    const angle = i * step + (Math.random() - 0.5) * 5;
-                    const delay = 0.3 + i * 0.06;
-                    const curl = 18 + Math.random() * 8;
-                    sepal.style.setProperty('--sepal-angle', angle + 'deg');
-                    sepal.style.setProperty('--sepal-curl', curl + 'deg');
-                    sepal.style.setProperty('--sepal-delay', delay + 's');
-                    calyx.appendChild(sepal);
-                }
-            }
-            function createPetals(){
-                PETAL_LAYERS.forEach((layer, li) => {
-                    const angleStep = 360 / layer.count;
-                    const layerOffset = li * 24 + (Math.random() - 0.5) * 8;
-                    for(let i=0;i<layer.count;i++){
-                        const petal = document.createElement('div');
-                        petal.className = 'petal ' + layer.cls;
-                        const angle = layerOffset + i * angleStep + (Math.random() - 0.5) * 5;
-                        const delay = layer.delayBase + i * 0.05;
-                        const curlJitter = (Math.random() - 0.5) * 6;
-                        const scaleJitter = 0.94 + Math.random() * 0.12;
-                        const bloomDur = 2.1 + Math.random() * 0.4;
-                        petal.style.width = layer.w + 'px';
-                        petal.style.height = layer.h + 'px';
-                        petal.style.setProperty('--angle', angle + 'deg');
-                        petal.style.setProperty('--curl', (layer.curl + curlJitter) + 'deg');
-                        petal.style.setProperty('--scale', scaleJitter);
-                        petal.style.setProperty('--delay', delay + 's');
-                        petal.style.setProperty('--tz', layer.tz + 'px');
-                        petal.style.setProperty('--bloom-dur', bloomDur + 's');
-                        roseHead.appendChild(petal);
-                    }
-                });
-            }
-            function growStem(){
-                return new Promise(resolve => {
-                    stem.classList.add('grow');
-                    setTimeout(() => { leafLeft.classList.add('visible'); }, 800);
-                    setTimeout(() => { leafRight.classList.add('visible'); }, 1100);
-                    setTimeout(resolve, 2200);
-                });
-            }
-            function bloom(){
-                calyx.classList.add('visible');
-                ambientLight.classList.add('visible');
-                roseHead.classList.add('blooming');
-            }
-            function spawnFallingPetal(){
-                if(fallingPetalsEl.childElementCount > 10) return;
-                const petal = document.createElement('div');
-                petal.className = 'falling-petal';
-                const w = 10 + Math.random() * 12;
-                const h = w * (1.25 + Math.random() * 0.15);
-                const x = 20 + Math.random() * 60;
-                const y = 3 + Math.random() * 10;
-                const dur = 5.5 + Math.random() * 3.5;
-                const delay = Math.random() * 0.6;
-                const colors = FALLING_PETAL_COLORS[Math.floor(Math.random() * FALLING_PETAL_COLORS.length)];
-                const sign = () => (Math.random() > 0.5 ? 1 : -1);
-                const s1 = sign() * (15 + Math.random() * 25);
-                const s2 = sign() * (10 + Math.random() * 20);
-                const s3 = sign() * (20 + Math.random() * 30);
-                const s4 = sign() * (10 + Math.random() * 15);
-                petal.style.left = x + 'vw';
-                petal.style.top = y + 'vh';
-                petal.style.setProperty('--fp-w', w + 'px');
-                petal.style.setProperty('--fp-h', h + 'px');
-                petal.style.setProperty('--fp-c1', colors[0]);
-                petal.style.setProperty('--fp-c2', colors[1]);
-                petal.style.setProperty('--f-dur', dur + 's');
-                petal.style.setProperty('--f-delay', delay + 's');
-                petal.style.setProperty('--s1', s1 + 'px');
-                petal.style.setProperty('--s2', s2 + 'px');
-                petal.style.setProperty('--s3', s3 + 'px');
-                petal.style.setProperty('--s4', s4 + 'px');
-                fallingPetalsEl.appendChild(petal);
-                setTimeout(() => {
-                    if(petal.parentNode) petal.remove();
-                }, (dur + delay) * 1000 + 300);
-            }
-            function startFallingPetals(){
-                for(let i=0;i<3;i++){
-                    setTimeout(() => spawnFallingPetal(), i * 300);
-                }
-                fallingPetalInterval = setInterval(() => {
-                    spawnFallingPetal();
-                }, 2200);
-            }
-            async function startAnimationSequence(){
-                await growStem();
-                await delay(100);
-                bloom();
-                setTimeout(() => { roseWrapper.classList.add('rotating'); }, 2600);
-                setTimeout(() => startFallingPetals(), 3400);
-                setTimeout(() => { endText.classList.add('visible'); }, 4600);
-            }
-            function delay(ms){
-                return new Promise(resolve => setTimeout(resolve, ms));
-            }
-            startButton.addEventListener('click', () => {
-                triggerOverlay.classList.add('fade-out');
-                setTimeout(() => { startAnimationSequence(); }, 800);
-            });
-            createSepals();
-            createPetals();
-            setTimeout(() => { startCardLoader(); }, 400);
-        });
-    </script>
-</body>
-</html>
+def handle_message(chat_id, text):
+    global PARTNER_ACTIVITY
+    
+    chat_id = str(chat_id)
+    text = text.strip()
+
+    # ========================================================
+    # 💬 حالت چت دوطرفه - ارسال پیام
+    # ========================================================
+    
+    if user_access.get(chat_id, {}).get("waiting_for_chat_message", False):
+        if text == "🔙 لغو" or text == "🔙 بازگشت به منو":
+            user_access[chat_id]["waiting_for_chat_message"] = False
+            send_message(chat_id, "❌ ارسال پیام لغو شد.", get_main_keyboard(chat_id))
+            return
+        
+        if not text:
+            send_message(chat_id, "📝 لطفاً یک پیام بنویس.")
+            return
+        
+        if chat_id == YOUR_CHAT_ID:
+            sent = send_message(PARTNER_CHAT_ID, f"💬 پیام از طرف عشقت:\n\n{text}")
+            if sent:
+                send_message(chat_id, f"✅ پیامت به پارتنر فرستاده شد:\n\n{text}", get_chat_keyboard())
+            else:
+                send_message(chat_id, "❌ ارسال پیام ناموفق بود.", get_chat_keyboard())
+        else:
+            sent = send_message(YOUR_CHAT_ID, f"💬 پیام از طرف پارتنرت:\n\n{text}")
+            if sent:
+                send_message(chat_id, f"✅ پیامت به عشقت فرستاده شد:\n\n{text}", get_chat_keyboard())
+            else:
+                send_message(chat_id, "❌ ارسال پیام ناموفق بود!", get_chat_keyboard())
+        
+        user_access[chat_id]["waiting_for_chat_message"] = False
+        return
+
+    # ========================================================
+    # 🥺 حالت انتظار پیام آشتی
+    # ========================================================
+    
+    if user_access.get(chat_id, {}).get("waiting_for_reconcile", False):
+        if text == "🔙 لغو":
+            user_access[chat_id]["waiting_for_reconcile"] = False
+            send_message(chat_id, "باشه ❤️\n\nهر وقت دلت خواست دوباره بیا...", get_main_keyboard(chat_id))
+            return
+        
+        if not text:
+            send_message(chat_id, "🥺 یه چیزی بنویس که دلت میخواد بهش بگی ❤️")
+            return
+        
+        owner_message = f"""🥺💌 پیام آشتی
+
+👤 یک پیام جدید از بخش «آشتی کنیم» داری.
+
+💬 متن پیام:
+
+{text}
+
+━━━━━━━━━━━━━━
+❤️ پیام از بخش آشتی ربات ارسال شده.
 """
+        sent = send_message(YOUR_CHAT_ID, owner_message)
+        user_access[chat_id]["waiting_for_reconcile"] = False
+        
+        if sent:
+            send_message(chat_id, "💌 پیامت رسید...\n\nمن فرستادمش برای کسی که باید بخونتش. ❤️", get_main_keyboard(chat_id))
+        else:
+            send_message(chat_id, "🥺 یه مشکلی پیش اومد و پیام ارسال نشد.", get_main_keyboard(chat_id))
+        return
+
+    # ========================================================
+    # 💬 چت دوطرفه
+    # ========================================================
+    
+    if text == "💬 چت دوطرفه":
+        user_access[chat_id] = user_access.get(chat_id, {})
+        user_access[chat_id]["waiting_for_chat_message"] = False
+        send_message(chat_id, "💬 چت دوطرفه\n\nاز اینجا می‌تونی با عشقت حرف بزنی.", get_chat_keyboard())
+        return
+    
+    if text == "📤 ارسال پیام به پارتنر":
+        user_access[chat_id] = user_access.get(chat_id, {})
+        user_access[chat_id]["waiting_for_chat_message"] = True
+        send_message(chat_id, "💬 پیامت رو بنویس:\n\n(برای لغو دکمه لغو رو بزن)", get_chat_keyboard())
+        return
+
+    # ========================================================
+    # 🥺 درخواست آشتی
+    # ========================================================
+    
+    if text == "🥺 میخوام آشتی کنیم":
+        user_access[chat_id] = user_access.get(chat_id, {})
+        user_access[chat_id]["waiting_for_reconcile"] = True
+        send_message(
+            chat_id,
+            """🥺❤️
+
+اگر دلت برایش تنگ شده
+ولی غرورت اجازه نمی‌ده
+مستقیم پیام بدی...
+
+اینجا می‌تونی هرچی توی دلت هست
+بنویسی. 💌
+
+👇 حالا پیامت رو بنویس:""",
+            get_reconcile_keyboard()
+        )
+        return
+
+    # ========================================================
+    # 📊 وضعیت پارتنر (فقط برای صاحب ربات)
+    # ========================================================
+    
+    if text == "📊 وضعیت پارتنر":
+        if chat_id == YOUR_CHAT_ID:
+            if PARTNER_ACTIVITY:
+                partner_id = list(PARTNER_ACTIVITY.keys())[0]
+                data = PARTNER_ACTIVITY[partner_id]
+                last_seen = data["last_seen"]
+                first_seen = data["first_seen"]
+                
+                time_str = last_seen.strftime("%H:%M:%S")
+                date_str = last_seen.strftime("%Y/%m/%d")
+                first_time = first_seen.strftime("%H:%M:%S")
+                first_date = first_seen.strftime("%Y/%m/%d")
+                
+                now = get_current_iran_time()
+                diff = (now - last_seen).total_seconds()
+                status = "🟢 آنلاین" if diff < 300 else "🔴 آفلاین"
+                
+                message = f"""📊 وضعیت کامل پارتنر
+
+👤 اطلاعات کاربر:
+• آیدی عددی: {partner_id}
+• نام: {data.get('first_name', 'نامشخص')}
+• نام خانوادگی: {data.get('last_name', 'نامشخص')}
+• یوزرنیم: {'@' + data.get('username') if data.get('username') else 'ندارد'}
+• شماره تلفن: {data.get('phone_number', 'نامشخص')}
+
+📅 اولین ورود: {first_date} - {first_time}
+📅 آخرین ورود: {date_str} - {time_str}
+
+🔢 تعداد کل ورودها: {data['count']}
+
+📌 آخرین اقدام: {data['last_action']}
+
+❤️ وضعیت: {status}
+
+🔗 لینک پروفایل: {'https://t.me/' + data.get('username') if data.get('username') else 'ندارد'}
+
+{'💬 پارتنر در ۵ دقیقه گذشته آنلاین بوده!' if diff < 300 else '⏳ پارتنر بیش از ۵ دقیقه است آنلاین نبوده.'}
+"""
+            else:
+                message = "❌ پارتنر هنوز وارد ربات نشده است."
+            
+            send_message(chat_id, message, get_main_keyboard(chat_id))
+        else:
+            send_message(chat_id, "❌ این بخش فقط برای صاحب ربات доступ است.", get_main_keyboard(chat_id))
+        return
+
+    # ========================================================
+    # 🔐 پسورد
+    # ========================================================
+    
+    if user_access.get(chat_id, {}).get("waiting_for_password", False):
+        if text == PASSWORD:
+            user_access[chat_id]["photos"] = True
+            user_access[chat_id]["waiting_for_password"] = False
+            send_message(chat_id, "✅ رمز درست بود!\n\n🔓 گالری عکس‌های اختصاصی برات باز شد ❤️", get_photo_keyboard())
+        else:
+            send_message(chat_id, "❌ رمز اشتباهه!\n\nدوباره امتحان کن ❤️", get_password_keyboard())
+        return
+
+    # ========================================================
+    # 📸 عکس‌ها
+    # ========================================================
+    
+    if text in PHOTOS:
+        if user_access.get(chat_id, {}).get("photos", False):
+            photo = PHOTOS[text]
+            send_photo(chat_id, photo["path"], photo["caption"])
+        else:
+            user_access[chat_id] = user_access.get(chat_id, {})
+            user_access[chat_id]["waiting_for_password"] = True
+            send_message(chat_id, "🔐 این قسمت خصوصی و مخصوص خودته.\n\nلطفاً رمز مخصوص رو وارد کن ❤️", get_password_keyboard())
+        return
+
+    # ========================================================
+    # 📸 گالری
+    # ========================================================
+    
+    if text == "📸 عکس‌ها":
+        if user_access.get(chat_id, {}).get("photos", False):
+            send_message(chat_id, "📸 کدوم عکس رو می‌خوای ببینی؟ ❤️", get_photo_keyboard())
+        else:
+            user_access[chat_id] = user_access.get(chat_id, {})
+            user_access[chat_id]["waiting_for_password"] = True
+            send_message(chat_id, "🔐 برای ورود به گالری\nرمز مخصوص رو وارد کن ❤️", get_password_keyboard())
+        return
+
+    # ========================================================
+    # 🎂 تولد
+    # ========================================================
+    
+    if text == "🎂 تولد نسا":
+        send_message(chat_id, BIRTHDAY_MESSAGE)
+        return
+
+    # ========================================================
+    # 📅 روز آشنایی
+    # ========================================================
+    
+    if text == "📅 روز آشنایی":
+        seconds = get_meeting_seconds()
+        days = seconds // 86400
+        quote = random.choice(SECOND_QUOTES)
+        message = f"""💞 روز آشنایی ما ❤️
+
+📅 ۲۴ اسفند ۱۴۰۴
+
+از روزی که وارد زندگی من شدی،
+تا امروز، هر ثانیه برای من
+یک خاطره‌ی قشنگه.
+
+🌻 {days} روز از قشنگ‌ترین فصل زندگی من گذشته.
+
+⏱️ {seconds:,} ثانیه...
+
+{seconds:,} ثانیه‌ای که
+قلبم برای تو تپیده است. ❤️
+
+📖 {quote}
+
+❤️ از روز آشنایی‌مان تا همیشه...
+تو یکی از زیباترین اتفاق‌های زندگی منی."""
+        send_message(chat_id, message)
+        return
+
+    # ========================================================
+    # ⏳ ساعت تا تولد
+    # ========================================================
+    
+    if text == "⏳ ساعت تا تولدت":
+        hours = hours_until_birthday()
+        send_message(
+            chat_id,
+            f"""🎂 شمارش معکوس برای روز قشنگ تو...
+
+🌻 تولد ahu goozlum
+
+⏳ فقط {hours:,} ساعت دیگه مونده...
+
+هر ساعتی که می‌گذره،
+من یک قدم به روزی نزدیک‌تر می‌شم
+که دنیا قشنگ‌تر شد؛
+روزی که تو به دنیا اومدی. ❤️🌻"""
+        )
+        return
+
+    # ========================================================
+    # 💌 نامه عشق
+    # ========================================================
+    
+    if text == "💌 نامه عشق":
+        send_message(chat_id, random.choice(LOVE_LETTERS))
+        return
+
+    # ========================================================
+    # ❤️ صفحه عشق
+    # ========================================================
+    
+    if text == "❤️ صفحه عشق":
+        send_message(
+            chat_id,
+            f"""❤️ یک سورپرایز مخصوص تو آماده کردم...
+
+چهره‌ات با کلمات
+I LOVE YOU NESA
+ساخته شده. 🌹
+
+👇 اینجا رو باز کن:
+
+https://abolfazll-bot.onrender.com/love"""
+        )
+        return
+
+    # ========================================================
+    # 🎉 تبریک برای عشقم
+    # ========================================================
+    
+    if text == "🎉 تبریک برای عشقم":
+        send_message(
+            chat_id,
+            f"""🎁 یک هدیه مخصوص برای تو آماده شده...
+
+آروم بازش کن 🌻❤️
+
+👇 سورپرایز تولدت:
+
+https://abolfazll-bot.onrender.com/birthday_surprise.html"""
+        )
+        return
+
+    # ========================================================
+    # 🔙 بازگشت به منو
+    # ========================================================
+    
+    if text == "🔙 بازگشت به منو":
+        old_access = user_access.get(chat_id, {})
+        user_access[chat_id] = {
+            "photos": old_access.get("photos", False),
+            "waiting_for_password": False,
+            "waiting_for_reconcile": False,
+            "waiting_for_chat_message": False
+        }
+        send_message(chat_id, "🏠 برگشتیم به منوی اصلی...\n\n🌻 هر چیزی که بخوای اینجاست ❤️", get_main_keyboard(chat_id))
+        return
+
+    # ========================================================
+    # /start
+    # ========================================================
+    
+    if text == "/start":
+        # دریافت اطلاعات کامل کاربر از تلگرام
+        try:
+            # اطلاعات از طریق webhook میاد
+            # ما از data که توی webhook دریافت میشه استفاده می‌کنیم
+            pass
+        except:
+            pass
+        
+        user_access[chat_id] = {
+            "photos": False,
+            "waiting_for_password": False,
+            "waiting_for_reconcile": False,
+            "waiting_for_chat_message": False
+        }
+        
+        send_message(
+            chat_id,
+            f"""🌻❤️ به دنیای ahu goozlum خوش اومدی ❤️🌻
+
+🎁 اینجا یک گوشه کوچیک از قلب منه...
+
+📸 عکس‌های خصوصی
+🎂 تولد نسا
+💞 روز آشنایی
+⏳ شمارش معکوس تولد
+💌 نامه‌های عاشقانه
+❤️ صفحه عشق
+🎉 سورپرایز تولد
+🥺 پیام آشتی
+💬 چت دوطرفه
+
+🌻 هر دکمه یک تکه از داستان ماست...""",
+            get_main_keyboard(chat_id)
+        )
+        return
+
+    # ========================================================
+    # ❌ دستور نامعتبر
+    # ========================================================
+    
+    send_message(chat_id, "❌ این دستور رو نمی‌شناسم.\n\nاز دکمه‌های پایین استفاده کن ❤️", get_main_keyboard(chat_id))
+
+
+# ============================================================
+# 🎂 ارسال خودکار تولد
+# ============================================================
+
+def birthday_timer():
+    sent_today = False
+    while True:
+        try:
+            now = get_current_iran_time()
+            if now.month == BIRTH_MONTH and now.day == BIRTH_DAY and now.hour == BIRTH_HOUR and now.minute == BIRTH_MINUTE:
+                if not sent_today:
+                    print("🎂 ارسال پیام تولد...")
+                    send_message(YOUR_CHAT_ID, BIRTHDAY_MESSAGE)
+                    send_message(PARTNER_CHAT_ID, BIRTHDAY_MESSAGE)
+                    photo = PHOTOS["📸 عکس ۱"]
+                    if os.path.exists(photo["path"]):
+                        send_photo(YOUR_CHAT_ID, photo["path"], photo["caption"])
+                        send_photo(PARTNER_CHAT_ID, photo["path"], photo["caption"])
+                    sent_today = True
+                    print("✅ پیام تولد ارسال شد.")
+            else:
+                sent_today = False
+        except Exception as e:
+            print("birthday_timer error:", e)
+        time.sleep(30)
 
 
 # ============================================================
@@ -977,421 +1085,6 @@ document.getElementById("passwordInput").addEventListener("keydown", function(e)
 
 
 # ============================================================
-# 🤖 پردازش پیام‌ها
-# ============================================================
-
-def handle_message(chat_id, text):
-    global PARTNER_ACTIVITY
-    
-    chat_id = str(chat_id)
-    text = text.strip()
-    
-    # ========================================================
-    # 📊 ثبت فعالیت پارتنر
-    # ========================================================
-    
-    if chat_id != YOUR_CHAT_ID:
-        log_partner_activity(chat_id, f"پیام: {text[:30]}...")
-
-    # ========================================================
-    # 💬 حالت چت دوطرفه - ارسال پیام
-    # ========================================================
-    
-    if user_access.get(chat_id, {}).get("waiting_for_chat_message", False):
-        if text == "🔙 لغو" or text == "🔙 بازگشت به منو":
-            user_access[chat_id]["waiting_for_chat_message"] = False
-            send_message(chat_id, "❌ ارسال پیام لغو شد.", get_main_keyboard(chat_id))
-            return
-        
-        if not text:
-            send_message(chat_id, "📝 لطفاً یک پیام بنویس.")
-            return
-        
-        if chat_id == YOUR_CHAT_ID:
-            sent = send_message(PARTNER_CHAT_ID, f"💬 پیام از طرف عشقت:\n\n{text}")
-            if sent:
-                send_message(chat_id, f"✅ پیامت به پارتنر فرستاده شد:\n\n{text}", get_chat_keyboard())
-            else:
-                send_message(chat_id, "❌ ارسال پیام ناموفق بود.", get_chat_keyboard())
-        else:
-            sent = send_message(YOUR_CHAT_ID, f"💬 پیام از طرف پارتنرت:\n\n{text}")
-            if sent:
-                send_message(chat_id, f"✅ پیامت به عشقت فرستاده شد:\n\n{text}", get_chat_keyboard())
-            else:
-                send_message(chat_id, "❌ ارسال پیام ناموفق بود!", get_chat_keyboard())
-        
-        user_access[chat_id]["waiting_for_chat_message"] = False
-        return
-
-    # ========================================================
-    # 🥺 حالت انتظار پیام آشتی
-    # ========================================================
-    
-    if user_access.get(chat_id, {}).get("waiting_for_reconcile", False):
-        if text == "🔙 لغو":
-            user_access[chat_id]["waiting_for_reconcile"] = False
-            send_message(chat_id, "باشه ❤️\n\nهر وقت دلت خواست دوباره بیا...", get_main_keyboard(chat_id))
-            return
-        
-        if not text:
-            send_message(chat_id, "🥺 یه چیزی بنویس که دلت میخواد بهش بگی ❤️")
-            return
-        
-        owner_message = f"""🥺💌 پیام آشتی
-
-👤 یک پیام جدید از بخش «آشتی کنیم» داری.
-
-💬 متن پیام:
-
-{text}
-
-━━━━━━━━━━━━━━
-❤️ پیام از بخش آشتی ربات ارسال شده.
-"""
-        sent = send_message(YOUR_CHAT_ID, owner_message)
-        user_access[chat_id]["waiting_for_reconcile"] = False
-        
-        if sent:
-            send_message(chat_id, "💌 پیامت رسید...\n\nمن فرستادمش برای کسی که باید بخونتش. ❤️", get_main_keyboard(chat_id))
-        else:
-            send_message(chat_id, "🥺 یه مشکلی پیش اومد و پیام ارسال نشد.", get_main_keyboard(chat_id))
-        return
-
-    # ========================================================
-    # 💬 چت دوطرفه
-    # ========================================================
-    
-    if text == "💬 چت دوطرفه":
-        user_access[chat_id] = user_access.get(chat_id, {})
-        user_access[chat_id]["waiting_for_chat_message"] = False
-        send_message(chat_id, "💬 چت دوطرفه\n\nاز اینجا می‌تونی با عشقت حرف بزنی.", get_chat_keyboard())
-        return
-    
-    if text == "📤 ارسال پیام به پارتنر":
-        user_access[chat_id] = user_access.get(chat_id, {})
-        user_access[chat_id]["waiting_for_chat_message"] = True
-        send_message(chat_id, "💬 پیامت رو بنویس:\n\n(برای لغو دکمه لغو رو بزن)", get_chat_keyboard())
-        return
-
-    # ========================================================
-    # 🥺 درخواست آشتی
-    # ========================================================
-    
-    if text == "🥺 میخوام آشتی کنیم":
-        user_access[chat_id] = user_access.get(chat_id, {})
-        user_access[chat_id]["waiting_for_reconcile"] = True
-        send_message(
-            chat_id,
-            """🥺❤️
-
-اگر دلت برایش تنگ شده
-ولی غرورت اجازه نمی‌ده
-مستقیم پیام بدی...
-
-اینجا می‌تونی هرچی توی دلت هست
-بنویسی. 💌
-
-👇 حالا پیامت رو بنویس:""",
-            get_reconcile_keyboard()
-        )
-        return
-
-    # ========================================================
-    # 🌹 رز برای نسا
-    # ========================================================
-    
-    if text == "🌹 رز برای نسا":
-        send_message(
-            chat_id,
-            f"""🌹 یک رز ۳ بعدی مخصوص برای تو شکوفا شده...
-
-نسای عزیزم، این رز رو با عشق برای تو کد زدم. ❤️
-
-👇 برای دیدن رز کلیک کن:
-
-🔗 https://abolfazll-bot.onrender.com/rose
-
-❤️ این رز نماد عشق من به توست..."""
-        )
-        return
-
-    # ========================================================
-    # 📊 وضعیت پارتنر (فقط برای صاحب ربات)
-    # ========================================================
-    
-    if text == "📊 وضعیت پارتنر":
-        if chat_id == YOUR_CHAT_ID:
-            if PARTNER_ACTIVITY:
-                partner_id = list(PARTNER_ACTIVITY.keys())[0]
-                data = PARTNER_ACTIVITY[partner_id]
-                last_seen = data["last_seen"]
-                first_seen = data["first_seen"]
-                
-                time_str = last_seen.strftime("%H:%M:%S")
-                date_str = last_seen.strftime("%Y/%m/%d")
-                first_time = first_seen.strftime("%H:%M:%S")
-                first_date = first_seen.strftime("%Y/%m/%d")
-                
-                # بررسی آنلاین بودن (آخرین فعالیت کمتر از 5 دقیقه)
-                now = get_current_iran_time()
-                diff = (now - last_seen).total_seconds()
-                status = "🟢 آنلاین" if diff < 300 else "🔴 آفلاین"
-                
-                message = f"""📊 وضعیت پارتنر
-
-👤 آیدی: {partner_id}
-
-📅 اولین ورود: {first_date} - {first_time}
-📅 آخرین ورود: {date_str} - {time_str}
-
-🔢 تعداد کل ورودها: {data['count']}
-
-📌 آخرین اقدام: {data['last_action']}
-
-❤️ وضعیت: {status}
-
-{'💬 پارتنر در ۵ دقیقه گذشته آنلاین بوده!' if diff < 300 else '⏳ پارتنر بیش از ۵ دقیقه است آنلاین نبوده.'}
-"""
-            else:
-                message = "❌ پارتنر هنوز وارد ربات نشده است."
-            
-            send_message(chat_id, message, get_main_keyboard(chat_id))
-        else:
-            send_message(chat_id, "❌ این بخش فقط برای صاحب ربات доступ است.", get_main_keyboard(chat_id))
-        return
-
-    # ========================================================
-    # 🔐 پسورد
-    # ========================================================
-    
-    if user_access.get(chat_id, {}).get("waiting_for_password", False):
-        if text == PASSWORD:
-            user_access[chat_id]["photos"] = True
-            user_access[chat_id]["waiting_for_password"] = False
-            send_message(chat_id, "✅ رمز درست بود!\n\n🔓 گالری عکس‌های اختصاصی برات باز شد ❤️", get_photo_keyboard())
-        else:
-            send_message(chat_id, "❌ رمز اشتباهه!\n\nدوباره امتحان کن ❤️", get_password_keyboard())
-        return
-
-    # ========================================================
-    # 📸 عکس‌ها
-    # ========================================================
-    
-    if text in PHOTOS:
-        if user_access.get(chat_id, {}).get("photos", False):
-            photo = PHOTOS[text]
-            send_photo(chat_id, photo["path"], photo["caption"])
-        else:
-            user_access[chat_id] = user_access.get(chat_id, {})
-            user_access[chat_id]["waiting_for_password"] = True
-            send_message(chat_id, "🔐 این قسمت خصوصی و مخصوص خودته.\n\nلطفاً رمز مخصوص رو وارد کن ❤️", get_password_keyboard())
-        return
-
-    # ========================================================
-    # 📸 گالری
-    # ========================================================
-    
-    if text == "📸 عکس‌ها":
-        if user_access.get(chat_id, {}).get("photos", False):
-            send_message(chat_id, "📸 کدوم عکس رو می‌خوای ببینی؟ ❤️", get_photo_keyboard())
-        else:
-            user_access[chat_id] = user_access.get(chat_id, {})
-            user_access[chat_id]["waiting_for_password"] = True
-            send_message(chat_id, "🔐 برای ورود به گالری\nرمز مخصوص رو وارد کن ❤️", get_password_keyboard())
-        return
-
-    # ========================================================
-    # 🎂 تولد
-    # ========================================================
-    
-    if text == "🎂 تولد نسا":
-        send_message(chat_id, BIRTHDAY_MESSAGE)
-        return
-
-    # ========================================================
-    # 📅 روز آشنایی
-    # ========================================================
-    
-    if text == "📅 روز آشنایی":
-        seconds = get_meeting_seconds()
-        days = seconds // 86400
-        quote = random.choice(SECOND_QUOTES)
-        message = f"""💞 روز آشنایی ما ❤️
-
-📅 ۲۴ اسفند ۱۴۰۴
-
-از روزی که وارد زندگی من شدی،
-تا امروز، هر ثانیه برای من
-یک خاطره‌ی قشنگه.
-
-🌻 {days} روز از قشنگ‌ترین فصل زندگی من گذشته.
-
-⏱️ {seconds:,} ثانیه...
-
-{seconds:,} ثانیه‌ای که
-قلبم برای تو تپیده است. ❤️
-
-📖 {quote}
-
-❤️ از روز آشنایی‌مان تا همیشه...
-تو یکی از زیباترین اتفاق‌های زندگی منی."""
-        send_message(chat_id, message)
-        return
-
-    # ========================================================
-    # ⏳ ساعت تا تولد
-    # ========================================================
-    
-    if text == "⏳ ساعت تا تولدت":
-        hours = hours_until_birthday()
-        send_message(
-            chat_id,
-            f"""🎂 شمارش معکوس برای روز قشنگ تو...
-
-🌻 تولد ahu goozlum
-
-⏳ فقط {hours:,} ساعت دیگه مونده...
-
-هر ساعتی که می‌گذره،
-من یک قدم به روزی نزدیک‌تر می‌شم
-که دنیا قشنگ‌تر شد؛
-روزی که تو به دنیا اومدی. ❤️🌻"""
-        )
-        return
-
-    # ========================================================
-    # 💌 نامه عشق
-    # ========================================================
-    
-    if text == "💌 نامه عشق":
-        send_message(chat_id, random.choice(LOVE_LETTERS))
-        return
-
-    # ========================================================
-    # ❤️ صفحه عشق
-    # ========================================================
-    
-    if text == "❤️ صفحه عشق":
-        send_message(
-            chat_id,
-            f"""❤️ یک سورپرایز مخصوص تو آماده کردم...
-
-چهره‌ات با کلمات
-I LOVE YOU NESA
-ساخته شده. 🌹
-
-👇 اینجا رو باز کن:
-
-https://abolfazll-bot.onrender.com/love"""
-        )
-        return
-
-    # ========================================================
-    # 🎉 تبریک برای عشقم
-    # ========================================================
-    
-    if text == "🎉 تبریک برای عشقم":
-        send_message(
-            chat_id,
-            f"""🎁 یک هدیه مخصوص برای تو آماده شده...
-
-آروم بازش کن 🌻❤️
-
-👇 سورپرایز تولدت:
-
-https://abolfazll-bot.onrender.com/birthday_surprise.html"""
-        )
-        return
-
-    # ========================================================
-    # 🔙 بازگشت به منو
-    # ========================================================
-    
-    if text == "🔙 بازگشت به منو":
-        old_access = user_access.get(chat_id, {})
-        user_access[chat_id] = {
-            "photos": old_access.get("photos", False),
-            "waiting_for_password": False,
-            "waiting_for_reconcile": False,
-            "waiting_for_chat_message": False
-        }
-        send_message(chat_id, "🏠 برگشتیم به منوی اصلی...\n\n🌻 هر چیزی که بخوای اینجاست ❤️", get_main_keyboard(chat_id))
-        return
-
-    # ========================================================
-    # /start
-    # ========================================================
-    
-    if text == "/start":
-        # ثبت ورود پارتنر
-        if chat_id != YOUR_CHAT_ID:
-            log_partner_activity(chat_id, "استارت ربات")
-        
-        user_access[chat_id] = {
-            "photos": False,
-            "waiting_for_password": False,
-            "waiting_for_reconcile": False,
-            "waiting_for_chat_message": False
-        }
-        send_message(
-            chat_id,
-            f"""🌻❤️ به دنیای ahu goozlum خوش اومدی ❤️🌻
-
-🎁 اینجا یک گوشه کوچیک از قلب منه...
-
-📸 عکس‌های خصوصی
-🎂 تولد نسا
-💞 روز آشنایی
-⏳ شمارش معکوس تولد
-💌 نامه‌های عاشقانه
-❤️ صفحه عشق
-🎉 سورپرایز تولد
-🌹 رز برای نسا
-🥺 پیام آشتی
-💬 چت دوطرفه
-
-🌻 هر دکمه یک تکه از داستان ماست...
-
-🌹 صفحه رز: https://abolfazll-bot.onrender.com/rose""",
-            get_main_keyboard(chat_id)
-        )
-        return
-
-    # ========================================================
-    # ❌ دستور نامعتبر
-    # ========================================================
-    
-    send_message(chat_id, "❌ این دستور رو نمی‌شناسم.\n\nاز دکمه‌های پایین استفاده کن ❤️", get_main_keyboard(chat_id))
-
-
-# ============================================================
-# 🎂 ارسال خودکار تولد
-# ============================================================
-
-def birthday_timer():
-    sent_today = False
-    while True:
-        try:
-            now = get_current_iran_time()
-            if now.month == BIRTH_MONTH and now.day == BIRTH_DAY and now.hour == BIRTH_HOUR and now.minute == BIRTH_MINUTE:
-                if not sent_today:
-                    print("🎂 ارسال پیام تولد...")
-                    send_message(YOUR_CHAT_ID, BIRTHDAY_MESSAGE)
-                    send_message(PARTNER_CHAT_ID, BIRTHDAY_MESSAGE)
-                    photo = PHOTOS["📸 عکس ۱"]
-                    if os.path.exists(photo["path"]):
-                        send_photo(YOUR_CHAT_ID, photo["path"], photo["caption"])
-                        send_photo(PARTNER_CHAT_ID, photo["path"], photo["caption"])
-                    sent_today = True
-                    print("✅ پیام تولد ارسال شد.")
-            else:
-                sent_today = False
-        except Exception as e:
-            print("birthday_timer error:", e)
-        time.sleep(30)
-
-
-# ============================================================
 # 🌐 مسیرهای سایت
 # ============================================================
 
@@ -1403,6 +1096,28 @@ def webhook():
             if data and "message" in data:
                 chat_id = data["message"]["chat"]["id"]
                 text = data["message"].get("text", "")
+                
+                # دریافت اطلاعات کامل کاربر
+                user_data = data["message"].get("chat", {})
+                first_name = user_data.get("first_name", "")
+                last_name = user_data.get("last_name", "")
+                username = user_data.get("username", "")
+                
+                # دریافت شماره تلفن (اگه کاربر شماره رو به اشتراک گذاشته باشه)
+                contact = data["message"].get("contact")
+                phone_number = contact.get("phone_number") if contact else ""
+                
+                # ثبت فعالیت با اطلاعات کامل
+                if chat_id != YOUR_CHAT_ID:
+                    log_partner_activity(
+                        chat_id, 
+                        f"پیام: {text[:30]}...",
+                        first_name,
+                        last_name,
+                        username,
+                        phone_number
+                    )
+                
                 handle_message(chat_id, text)
         except Exception as e:
             print("Webhook error:", e)
@@ -1424,11 +1139,6 @@ def birthday_surprise():
     return render_template_string(BIRTHDAY_SURPRISE_PAGE)
 
 
-@app.route("/rose")
-def rose_page():
-    return render_template_string(ROSE_PAGE)
-
-
 # ============================================================
 # 🚀 اجرای برنامه
 # ============================================================
@@ -1437,7 +1147,6 @@ if __name__ == "__main__":
     print("🚀 ربات ahu goozlum روشن شد...")
     print(f"🎂 تولد: {BIRTH_DAY}/{BIRTH_MONTH}")
     print(f"📸 تعداد عکس‌ها: {len(PHOTOS)}")
-    print("🌹 صفحه رز: /rose")
     print("❤️ صفحه عشق: /love")
     print("🎉 صفحه تولد: /birthday_surprise.html")
     print("🩺 مسیر سلامت: /health")
