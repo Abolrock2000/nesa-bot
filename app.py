@@ -16,6 +16,7 @@ app = Flask(__name__)
 TOKEN = "8967116754:AAFJlNPRH8Cht-8qKo3zEHCJvSX1JrBGGXQ"
 YOUR_CHAT_ID = "1228473012"
 PARTNER_CHAT_ID = "7706282234"
+TEST_CHAT_ID = "7989818498"  # اکانت تست
 PASSWORD = "1386"
 
 BIRTH_DAY = 8
@@ -27,8 +28,40 @@ IRAN_OFFSET = datetime.timedelta(hours=3, minutes=30)
 
 user_access = {}
 PARTNER_ACTIVITY = {}
+RECONCILE_STATE = {}
 
 WEBSITE_URL = "https://abolfazll-bot.onrender.com"
+
+# ============================================================
+# 😂 پیام‌های خنده‌دار
+# ============================================================
+
+FUNNY_RESPONSES = [
+    "😅 مگه دسته خودت نیست؟!",
+    "😂 آخی جان! تو که عاشق منی!",
+    "🤣 نه؟! مگه میشه؟!",
+    "😏 بیا دیگه... دلت نمیاد؟",
+    "🥺 نکن به دلم...",
+    "😈 میدونم که دلت میخواد بیای!",
+    "🤭 نه یعنی چی؟! تو که بهترینی!",
+    "😜 بیا که بهت جایزه میدم!",
+    "😂 خودت میدونی که دوستم داری!",
+    "😆 آخی نه یعنی چی؟! بیا دیگه!",
+    "🤪 نه گفتن برای تو نیست!",
+]
+
+RECONCILE_MESSAGES = [
+    "🥺 بیا دیگه آشتی کنیم... دلم برات تنگ شده ❤️",
+    "😢 خیلی دلم میخواد برگردی پیشم... بیا 🥺",
+    "🌸 میدونم که دلت پشتمه... بیا آشتی کنیم ❤️",
+    "💔 بدون تو دلم گرفته... بیا پیشم 🌹",
+    "🌻 یادت هست چقدر باهم خوش بودیم؟ بیا دوباره 🥰",
+    "❤️ من بدون تو نمیتونم... بیا پیشم ❤️",
+    "🥺 آخرین بار... بیا آشتی کنیم؟ 🥺",
+    "😭 خیلی دلم برات تنگ شده... بیا ❤️",
+    "💗 هنوزم دوست دارم... بیا پیشم 🌸",
+    "🌺 میخوام برگردی... بیا ❤️",
+]
 
 
 # ============================================================
@@ -41,7 +74,7 @@ def get_current_iran_time():
 
 
 # ============================================================
-# 📊 ثبت فعالیت پارتنر با اطلاعات کامل
+# 📊 ثبت فعالیت پارتنر
 # ============================================================
 
 def log_partner_activity(chat_id, action="ورود", first_name="", last_name="", username="", phone_number=""):
@@ -224,7 +257,7 @@ def hours_until_birthday():
 
 
 # ============================================================
-# ⌨️ منوی اصلی (با دکمه‌های جدید)
+# ⌨️ منوی اصلی
 # ============================================================
 
 def get_main_keyboard(chat_id=None):
@@ -234,9 +267,10 @@ def get_main_keyboard(chat_id=None):
         ["💬 چت دوطرفه"]
     ]
     
-    # دکمه وضعیت پارتنر فقط برای صاحب ربات
+    # دکمه‌های فقط برای صاحب ربات
     if chat_id == YOUR_CHAT_ID:
         keyboard.append(["📊 وضعیت پارتنر"])
+        keyboard.append(["💔 درخواست آشتی"])
     
     keyboard.append(["🔙 بازگشت به منو"])
     
@@ -290,6 +324,34 @@ def get_chat_keyboard():
 
 
 # ============================================================
+# 💔 منوی نظرسنجی آشتی
+# ============================================================
+
+def get_reconcile_keyboard():
+    return {
+        "keyboard": [
+            ["❤️ بله، بیا آشتی کنیم"],
+            ["💔 نه، نمیام"]
+        ],
+        "resize_keyboard": True
+    }
+
+
+# ============================================================
+# 💔 منوی انتخاب مخاطب برای آشتی (فقط برای مالک)
+# ============================================================
+
+def get_reconcile_target_menu():
+    return {
+        "keyboard": [
+            ["❤️ ارسال به پارتنر", "🧪 ارسال به تست"],
+            ["🔙 بازگشت به منو"]
+        ],
+        "resize_keyboard": True
+    }
+
+
+# ============================================================
 # 📤 ارسال پیام تلگرام
 # ============================================================
 
@@ -336,6 +398,65 @@ def send_photo(chat_id, photo_path, caption=""):
 
 
 # ============================================================
+# 💔 سیستم نظرسنجی آشتی
+# ============================================================
+
+def send_reconcile_survey(chat_id, attempt=0, target_name="کاربر"):
+    """ارسال نظرسنجی آشتی به مخاطب"""
+    
+    if attempt >= len(RECONCILE_MESSAGES):
+        final_message = f"""😔 خب... باشه...
+
+منتظرت می‌مونم. هر وقت دلت خواست بیا پیشم.
+
+❤️ در هر صورت، من همیشه دوستت دارم 🌹"""
+        send_message(chat_id, final_message)
+        RECONCILE_STATE[chat_id] = {"status": "ended", "attempt": attempt}
+        return
+    
+    message = f"""💔 {RECONCILE_MESSAGES[attempt]}
+
+می‌خوای آشتی کنیم؟ ❤️"""
+    
+    send_message(chat_id, message, get_reconcile_keyboard())
+    RECONCILE_STATE[chat_id] = {"status": "waiting", "attempt": attempt, "target_name": target_name}
+
+
+def handle_reconcile_response(chat_id, response):
+    """پردازش پاسخ مخاطب به نظرسنجی آشتی"""
+    
+    chat_id = str(chat_id)
+    state = RECONCILE_STATE.get(chat_id, {})
+    
+    if state.get("status") != "waiting":
+        return
+    
+    attempt = state.get("attempt", 0)
+    target_name = state.get("target_name", "کاربر")
+    
+    if response == "❤️ بله، بیا آشتی کنیم":
+        send_message(chat_id, "❤️❤️❤️ یاااای! خیلی خوشحالم! 🥰\n\nبهترین تصمیم دنیا رو گرفتی! 🌹")
+        
+        # به مالک اطلاع بده
+        if chat_id == TEST_CHAT_ID:
+            send_message(YOUR_CHAT_ID, f"🧪 تست: {chat_id} گفت بله! ❤️\n\nسیستم نظرسنجی به درستی کار میکنه! ✅")
+        else:
+            send_message(YOUR_CHAT_ID, f"🎉 پارتنرت گفت بله! ❤️\n\n{chat_id} قبول کرد که آشتی کنه! 🥳")
+        
+        RECONCILE_STATE[chat_id] = {"status": "accepted", "attempt": attempt}
+        return
+    
+    elif response == "💔 نه، نمیام":
+        funny_msg = random.choice(FUNNY_RESPONSES)
+        send_message(chat_id, f"{funny_msg}")
+        
+        send_message(YOUR_CHAT_ID, f"😅 {target_name} نه گفت! (تلاش {attempt + 1})")
+        
+        send_reconcile_survey(chat_id, attempt + 1, target_name)
+        return
+
+
+# ============================================================
 # 🤖 پردازش پیام‌ها
 # ============================================================
 
@@ -344,6 +465,15 @@ def handle_message(chat_id, text):
     
     chat_id = str(chat_id)
     text = text.strip()
+
+    # ========================================================
+    # 💔 پاسخ به نظرسنجی آشتی
+    # ========================================================
+    
+    if text in ["❤️ بله، بیا آشتی کنیم", "💔 نه، نمیام"]:
+        if chat_id != YOUR_CHAT_ID:
+            handle_reconcile_response(chat_id, text)
+        return
 
     # ========================================================
     # 💬 حالت چت دوطرفه - ارسال پیام
@@ -392,6 +522,59 @@ def handle_message(chat_id, text):
         return
 
     # ========================================================
+    # 💔 درخواست آشتی (فقط برای صاحب ربات)
+    # ========================================================
+    
+    if text == "💔 درخواست آشتی":
+        if chat_id == YOUR_CHAT_ID:
+            send_message(
+                chat_id, 
+                "💔 به چه کسی می‌خوای درخواست آشتی بدی؟",
+                get_reconcile_target_menu()
+            )
+        else:
+            send_message(chat_id, "❌ این بخش فقط برای صاحب ربات доступ است.", get_main_keyboard(chat_id))
+        return
+    
+    # ========================================================
+    # ❤️ ارسال به پارتنر
+    # ========================================================
+    
+    if text == "❤️ ارسال به پارتنر":
+        if chat_id == YOUR_CHAT_ID:
+            send_message(chat_id, "📤 ارسال درخواست آشتی به پارتنر...")
+            
+            state = RECONCILE_STATE.get(PARTNER_CHAT_ID, {})
+            if state.get("status") == "accepted":
+                send_message(chat_id, "❤️ پارتنرت قبلاً آشتی رو قبول کرده! 🥰")
+                return
+            
+            send_reconcile_survey(PARTNER_CHAT_ID, 0, "پارتنر")
+            send_message(chat_id, "✅ درخواست آشتی به پارتنر ارسال شد!\n\nمنتظر پاسخش باش... ❤️")
+        else:
+            send_message(chat_id, "❌ این بخش فقط برای صاحب ربات доступ است.", get_main_keyboard(chat_id))
+        return
+    
+    # ========================================================
+    # 🧪 ارسال به تست (برای تست روی خودت)
+    # ========================================================
+    
+    if text == "🧪 ارسال به تست":
+        if chat_id == YOUR_CHAT_ID:
+            send_message(chat_id, "🧪 ارسال درخواست آشتی به اکانت تست (7989818498)...")
+            
+            state = RECONCILE_STATE.get(TEST_CHAT_ID, {})
+            if state.get("status") == "accepted":
+                send_message(chat_id, "🧪 قبلاً تست رو قبول کردی! 🥰")
+                return
+            
+            send_reconcile_survey(TEST_CHAT_ID, 0, "تست")
+            send_message(chat_id, "🧪 درخواست آشتی به اکانت تست ارسال شد!\n\nحالا برو به اکانت تست و پاسخ بده...")
+        else:
+            send_message(chat_id, "❌ این بخش فقط برای صاحب ربات доступ است.", get_main_keyboard(chat_id))
+        return
+
+    # ========================================================
     # 📊 وضعیت پارتنر (فقط برای صاحب ربات)
     # ========================================================
     
@@ -412,6 +595,29 @@ def handle_message(chat_id, text):
                 diff = (now - last_seen).total_seconds()
                 status = "🟢 آنلاین" if diff < 300 else "🔴 آفلاین"
                 
+                reconcile_status = RECONCILE_STATE.get(partner_id, {})
+                reconcile_text = ""
+                if reconcile_status.get("status") == "accepted":
+                    reconcile_text = "❤️ آشتی کرده 🥰"
+                elif reconcile_status.get("status") == "ended":
+                    reconcile_text = "💔 نتونستیم آشتی کنیم... 😔"
+                elif reconcile_status.get("status") == "waiting":
+                    reconcile_text = "⏳ در حال بررسی..."
+                else:
+                    reconcile_text = "❓ درخواستی ارسال نشده"
+                
+                # وضعیت تست
+                test_state = RECONCILE_STATE.get(TEST_CHAT_ID, {})
+                test_text = ""
+                if test_state.get("status") == "accepted":
+                    test_text = "✅ تست قبول شده 🥰"
+                elif test_state.get("status") == "ended":
+                    test_text = "❌ تست رد شده 😔"
+                elif test_state.get("status") == "waiting":
+                    test_text = "⏳ تست در حال بررسی..."
+                else:
+                    test_text = "❓ تست انجام نشده"
+                
                 message = f"""📊 وضعیت کامل پارتنر
 
 👤 اطلاعات کاربر:
@@ -429,6 +635,10 @@ def handle_message(chat_id, text):
 📌 آخرین اقدام: {data['last_action']}
 
 ❤️ وضعیت: {status}
+
+💔 وضعیت آشتی: {reconcile_text}
+
+🧪 وضعیت تست: {test_text}
 
 🔗 لینک پروفایل: {'https://t.me/' + data.get('username') if data.get('username') else 'ندارد'}
 
@@ -702,7 +912,9 @@ if __name__ == "__main__":
     print(f"🎂 تولد: {BIRTH_DAY}/{BIRTH_MONTH}")
     print(f"📸 تعداد عکس‌ها: {len(PHOTOS)}")
     print("🩺 مسیر سلامت: /health")
-    print(f"💬 چت دوطرفه با آیدی: {PARTNER_CHAT_ID}")
+    print(f"💬 چت دوطرفه با پارتنر: {PARTNER_CHAT_ID}")
+    print(f"🧪 اکانت تست: {TEST_CHAT_ID}")
+    print("💔 دکمه درخواست آشتی فقط برای شما نمایش داده میشه")
 
     timer_thread = threading.Thread(target=birthday_timer, daemon=True)
     timer_thread.start()
