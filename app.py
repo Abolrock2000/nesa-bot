@@ -29,7 +29,7 @@ IRAN_OFFSET = datetime.timedelta(hours=3, minutes=30)
 user_access = {}
 PARTNER_ACTIVITY = {}
 RECONCILE_STATE = {}
-PHOTO_VIEWED = {}  # برای ذخیره وضعیت دیده شدن عکس
+PHOTO_VIEWED = {}
 
 WEBSITE_URL = "https://abolfazll-bot.onrender.com"
 
@@ -132,7 +132,7 @@ def get_current_iran_time():
 
 
 # ============================================================
-# 📊 ثبت فعالیت پارتنر (با اطلاع‌رسانی کامل)
+# 📊 ثبت فعالیت پارتنر
 # ============================================================
 
 def log_partner_activity(chat_id, action="ورود", first_name="", last_name="", username="", phone_number=""):
@@ -184,7 +184,6 @@ def log_partner_activity(chat_id, action="ورود", first_name="", last_name=""
     }
     day_persian = weekdays.get(date_persian, date_persian)
     
-    # پیام ورود کامل با اطلاعات
     message = f"""🌸 پارتنرت وارد ربات شد! 🌸
 
 👤 اطلاعات کاربر:
@@ -209,134 +208,6 @@ def log_partner_activity(chat_id, action="ورود", first_name="", last_name=""
     
     if chat_id not in user_access:
         send_message(YOUR_CHAT_ID, f"💡 پارتنر برای اولین بار وارد ربات شد! (رمز گالری: {PASSWORD})")
-
-
-# ============================================================
-# 📸 ارسال عکس با قابلیت تشخیص دیده شدن
-# ============================================================
-
-def send_photo_with_tracking(chat_id, photo_path, caption="", target_name="کاربر"):
-    """ارسال عکس و ثبت برای تشخیص دیده شدن"""
-    
-    # اضافه کردن شناسه منحصر به فرد به کپشن
-    photo_id = f"PHOTO_{int(time.time())}_{random.randint(1000, 9999)}"
-    full_caption = f"{caption}\n\n━━━━━━━━━━━━━━━━━━━━━━\n🆔 {photo_id}"
-    
-    success = send_photo(chat_id, photo_path, full_caption)
-    
-    if success:
-        # ذخیره وضعیت عکس برای تشخیص دیده شدن
-        PHOTO_VIEWED[chat_id] = {
-            "photo_id": photo_id,
-            "sent_at": get_current_iran_time(),
-            "viewed": False,
-            "viewed_at": None
-        }
-        
-        # به مالک اطلاع بده که عکس ارسال شد
-        send_message(YOUR_CHAT_ID, f"📸 عکس به {target_name} ارسال شد!\n🆔 {photo_id}\n⏰ {get_current_iran_time().strftime('%H:%M:%S')}")
-        
-        return True
-    return False
-
-
-def check_photo_viewed(chat_id):
-    """بررسی اینکه عکس دیده شده یا نه"""
-    if chat_id in PHOTO_VIEWED:
-        data = PHOTO_VIEWED[chat_id]
-        if data["viewed"]:
-            return True
-    return False
-
-
-# ============================================================
-# 🖼️ ارسال عکس از مسیر با تشخیص دیده شدن
-# ============================================================
-
-def send_photo_from_path(chat_id, target_name="کاربر"):
-    """ارسال عکس با پیام احساسی و قابلیت تشخیص دیده شدن"""
-    
-    photo_path = "photos/file_00000000f1788210bc5e8d993e16a277.png"
-    
-    caption = f"""🌹 این عکس رو برای تو فرستادم...
-
-💕 چون تو زیباترین اتفاق زندگی منی...
-🌸 هر بار که نگاهت میکنم، قلبم میتپه...
-
-❤️ این عکس یادگاری از عشق منه...
-🌷 امیدوارم که دوست داشته باشی...
-
-🥰 همیشه عاشقتم...
-
-━━━━━━━━━━━━━━━━━━━━━━
-📸 اسم عکس: file_00000000f1788210bc5e8d993e16a277.png
-💕 درستش اینه ❤️"""
-    
-    success = send_photo_with_tracking(chat_id, photo_path, caption, target_name)
-    
-    if success:
-        send_message(chat_id, "💕 عکس رو دریافت کردی؟ امیدوارم خوشت اومده باشه... 🌹")
-        
-        # بعد از 30 ثانیه چک کن ببینه یا نه
-        def check_viewed():
-            time.sleep(30)
-            if check_photo_viewed(chat_id):
-                send_message(YOUR_CHAT_ID, f"👀 {target_name} عکس رو دید! 🥰")
-            else:
-                send_message(YOUR_CHAT_ID, f"⏳ {target_name} هنوز عکس رو ندیده... 😔")
-        
-        threading.Thread(target=check_viewed, daemon=True).start()
-        
-        return True
-    else:
-        send_message(chat_id, "❌ متاسفم! عکس پیدا نشد! 😢\n\nمسیر عکس رو چک کن!")
-        return False
-
-
-# ============================================================
-# 📸 ارسال عکس معمولی
-# ============================================================
-
-def send_photo(chat_id, photo_path, caption=""):
-    try:
-        if photo_path.startswith("http"):
-            url = f"https://api.telegram.org/bot{TOKEN}/sendPhoto"
-            payload = {"chat_id": chat_id, "photo": photo_path, "caption": caption}
-            response = requests.post(url, data=payload, timeout=30)
-            return response.status_code == 200
-
-        if not os.path.exists(photo_path):
-            send_message(chat_id, "❌ عکس پیدا نشد!")
-            return False
-
-        url = f"https://api.telegram.org/bot{TOKEN}/sendPhoto"
-        with open(photo_path, "rb") as photo:
-            files = {"photo": photo}
-            data = {"chat_id": chat_id, "caption": caption}
-            response = requests.post(url, data=data, files=files, timeout=30)
-        return response.status_code == 200
-    except Exception as e:
-        print("send_photo error:", e)
-        return False
-
-
-# ============================================================
-# 📤 ارسال پیام
-# ============================================================
-
-def send_message(chat_id, text, reply_markup=None):
-    url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
-    try:
-        payload = {"chat_id": chat_id, "text": text}
-        if reply_markup:
-            payload["reply_markup"] = json.dumps(reply_markup, ensure_ascii=False)
-        response = requests.post(url, data=payload, timeout=15)
-        if response.status_code == 200:
-            return True
-        print("Telegram error:", response.status_code, response.text)
-    except Exception as e:
-        print("send_message error:", e)
-    return False
 
 
 # ============================================================
@@ -517,6 +388,131 @@ def get_photo_send_menu():
 
 
 # ============================================================
+# 📤 ارسال پیام تلگرام
+# ============================================================
+
+def send_message(chat_id, text, reply_markup=None):
+    url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
+    try:
+        payload = {"chat_id": chat_id, "text": text}
+        if reply_markup:
+            payload["reply_markup"] = json.dumps(reply_markup, ensure_ascii=False)
+        response = requests.post(url, data=payload, timeout=15)
+        if response.status_code == 200:
+            return True
+        print("Telegram error:", response.status_code, response.text)
+    except Exception as e:
+        print("send_message error:", e)
+    return False
+
+
+# ============================================================
+# 📸 ارسال عکس
+# ============================================================
+
+def send_photo(chat_id, photo_path, caption=""):
+    try:
+        if photo_path.startswith("http"):
+            url = f"https://api.telegram.org/bot{TOKEN}/sendPhoto"
+            payload = {"chat_id": chat_id, "photo": photo_path, "caption": caption}
+            response = requests.post(url, data=payload, timeout=30)
+            return response.status_code == 200
+
+        if not os.path.exists(photo_path):
+            send_message(chat_id, "❌ عکس پیدا نشد!")
+            return False
+
+        url = f"https://api.telegram.org/bot{TOKEN}/sendPhoto"
+        with open(photo_path, "rb") as photo:
+            files = {"photo": photo}
+            data = {"chat_id": chat_id, "caption": caption}
+            response = requests.post(url, data=data, files=files, timeout=30)
+        return response.status_code == 200
+    except Exception as e:
+        print("send_photo error:", e)
+        return False
+
+
+# ============================================================
+# 🖼️ ارسال عکس با تشخیص دیده شدن
+# ============================================================
+
+def send_photo_with_tracking(chat_id, photo_path, caption="", target_name="کاربر"):
+    """ارسال عکس و ثبت برای تشخیص دیده شدن"""
+    
+    photo_id = f"PHOTO_{int(time.time())}_{random.randint(1000, 9999)}"
+    full_caption = f"{caption}\n\n━━━━━━━━━━━━━━━━━━━━━━\n🆔 {photo_id}"
+    
+    success = send_photo(chat_id, photo_path, full_caption)
+    
+    if success:
+        PHOTO_VIEWED[chat_id] = {
+            "photo_id": photo_id,
+            "sent_at": get_current_iran_time(),
+            "viewed": False,
+            "viewed_at": None
+        }
+        
+        send_message(YOUR_CHAT_ID, f"📸 عکس به {target_name} ارسال شد!\n🆔 {photo_id}\n⏰ {get_current_iran_time().strftime('%H:%M:%S')}")
+        
+        return True
+    return False
+
+
+def check_photo_viewed(chat_id):
+    """بررسی اینکه عکس دیده شده یا نه"""
+    if chat_id in PHOTO_VIEWED:
+        data = PHOTO_VIEWED[chat_id]
+        if data["viewed"]:
+            return True
+    return False
+
+
+# ============================================================
+# 🖼️ ارسال عکس از مسیر (با اسم درست)
+# ============================================================
+
+def send_photo_from_path(chat_id, target_name="کاربر"):
+    """ارسال عکس با پیام احساسی و قابلیت تشخیص دیده شدن"""
+    
+    # مسیر درست عکس
+    photo_path = "photos/file_00000000f1788210bc5e8d993e16a277.png"
+    
+    caption = f"""🌹 این عکس رو برای تو فرستادم...
+
+💕 چون تو زیباترین اتفاق زندگی منی...
+🌸 هر بار که نگاهت میکنم، قلبم میتپه...
+
+❤️ این عکس یادگاری از عشق منه...
+🌷 امیدوارم که دوست داشته باشی...
+
+🥰 همیشه عاشقتم...
+
+━━━━━━━━━━━━━━━━━━━━━━
+📸 اسم عکس: file_00000000f1788210bc5e8d993e16a277.png
+💕 درستش اینه ❤️"""
+    
+    success = send_photo_with_tracking(chat_id, photo_path, caption, target_name)
+    
+    if success:
+        send_message(chat_id, "💕 عکس رو دریافت کردی؟ امیدوارم خوشت اومده باشه... 🌹")
+        
+        def check_viewed():
+            time.sleep(30)
+            if check_photo_viewed(chat_id):
+                send_message(YOUR_CHAT_ID, f"👀 {target_name} عکس رو دید! 🥰")
+            else:
+                send_message(YOUR_CHAT_ID, f"⏳ {target_name} هنوز عکس رو ندیده... 😔")
+        
+        threading.Thread(target=check_viewed, daemon=True).start()
+        
+        return True
+    else:
+        send_message(chat_id, "❌ متاسفم! عکس پیدا نشد! 😢\n\nمسیر عکس رو چک کن!")
+        return False
+
+
+# ============================================================
 # 💔 سیستم نظرسنجی آشتی
 # ============================================================
 
@@ -609,7 +605,7 @@ def handle_reconcile_response(chat_id, response):
 
 
 # ============================================================
-# 🤖 پردازش پیام‌ها (با تشخیص دیده شدن عکس)
+# 🤖 پردازش پیام‌ها
 # ============================================================
 
 def handle_message(chat_id, text):
@@ -619,11 +615,10 @@ def handle_message(chat_id, text):
     text = text.strip()
 
     # ========================================================
-    # 📸 تشخیص دیده شدن عکس (هر پیامی = دیده شدن)
+    # 📸 تشخیص دیده شدن عکس
     # ========================================================
     
     if chat_id != YOUR_CHAT_ID:
-        # اگه پارتنر هر پیامی بفرسته، یعنی آنلاین شده و عکس رو دیده
         if chat_id in PHOTO_VIEWED and not PHOTO_VIEWED[chat_id]["viewed"]:
             PHOTO_VIEWED[chat_id]["viewed"] = True
             PHOTO_VIEWED[chat_id]["viewed_at"] = get_current_iran_time()
@@ -838,7 +833,6 @@ def handle_message(chat_id, text):
                 else:
                     test_text = "❓ تست انجام نشده"
                 
-                # وضعیت دیده شدن عکس
                 photo_status = "📸 عکسی ارسال نشده"
                 if partner_id in PHOTO_VIEWED:
                     if PHOTO_VIEWED[partner_id]["viewed"]:
@@ -1112,7 +1106,6 @@ def webhook():
                 contact = data["message"].get("contact")
                 phone_number = contact.get("phone_number") if contact else ""
                 
-                # ثبت فعالیت با اطلاعات کامل (حتی اگه پیام هم نزنه)
                 if chat_id != YOUR_CHAT_ID:
                     log_partner_activity(
                         chat_id, 
