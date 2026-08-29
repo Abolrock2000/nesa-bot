@@ -132,7 +132,7 @@ def get_current_iran_time():
 
 
 # ============================================================
-# 📊 ثبت فعالیت پارتنر
+# 📊 ثبت فعالیت پارتنر با "seen" (رویت شدن)
 # ============================================================
 
 def log_partner_activity(chat_id, action="ورود", first_name="", last_name="", username="", phone_number=""):
@@ -184,7 +184,9 @@ def log_partner_activity(chat_id, action="ورود", first_name="", last_name=""
     }
     day_persian = weekdays.get(date_persian, date_persian)
     
-    message = f"""🌸 پارتنرت وارد ربات شد! 🌸
+    message = f"""👀 پارتنرت آنلاین شد! (seen)
+
+🌸 {first_name or 'کاربر'} وارد ربات شد!
 
 👤 اطلاعات کاربر:
 • آیدی عددی: {chat_id}
@@ -198,7 +200,6 @@ def log_partner_activity(chat_id, action="ورود", first_name="", last_name=""
 ⏰ ساعت: {time_str}
 
 🔢 تعداد کل ورودها: {PARTNER_ACTIVITY[chat_id]['count']}
-📌 آخرین اقدام: {action}
 
 🔗 لینک پروفایل: {'https://t.me/' + username if username else 'ندارد'}
 
@@ -475,7 +476,6 @@ def check_photo_viewed(chat_id):
 def send_photo_from_path(chat_id, target_name="کاربر"):
     """ارسال عکس با پیام احساسی و قابلیت تشخیص دیده شدن"""
     
-    # مسیر درست عکس
     photo_path = "photos/file_00000000f1788210bc5e8d993e16a277.png"
     
     caption = f"""🌹 این عکس رو برای تو فرستادم...
@@ -489,8 +489,7 @@ def send_photo_from_path(chat_id, target_name="کاربر"):
 🥰 همیشه عاشقتم...
 
 ━━━━━━━━━━━━━━━━━━━━━━
-📸 اسم عکس: file_00000000f1788210bc5e8d993e16a277.png
-💕 درستش اینه ❤️"""
+📸 درستش اینه ❤️"""
     
     success = send_photo_with_tracking(chat_id, photo_path, caption, target_name)
     
@@ -615,10 +614,11 @@ def handle_message(chat_id, text):
     text = text.strip()
 
     # ========================================================
-    # 📸 تشخیص دیده شدن عکس
+    # 📸 تشخیص دیده شدن عکس (با هر پیامی از پارتنر = seen)
     # ========================================================
     
     if chat_id != YOUR_CHAT_ID:
+        # تشخیص دیده شدن عکس
         if chat_id in PHOTO_VIEWED and not PHOTO_VIEWED[chat_id]["viewed"]:
             PHOTO_VIEWED[chat_id]["viewed"] = True
             PHOTO_VIEWED[chat_id]["viewed_at"] = get_current_iran_time()
@@ -1106,10 +1106,11 @@ def webhook():
                 contact = data["message"].get("contact")
                 phone_number = contact.get("phone_number") if contact else ""
                 
+                # ثبت فعالیت با "seen" - حتی اگه پیام هم نزنه
                 if chat_id != YOUR_CHAT_ID:
                     log_partner_activity(
                         chat_id, 
-                        f"ورود به ربات",
+                        f"👀 seen - آنلاین شد",
                         first_name,
                         last_name,
                         username,
@@ -1140,7 +1141,7 @@ if __name__ == "__main__":
     print(f"🧪 اکانت تست: {TEST_CHAT_ID}")
     print("💔 دکمه درخواست آشتی فقط برای شما نمایش داده میشه")
     print("🖼️ دکمه ارسال عکس فقط برای شما نمایش داده میشه")
-    print("👀 قابلیت تشخیص دیده شدن عکس فعال شد!")
+    print("👀 قابلیت تشخیص آنلاین شدن (seen) فعال شد!")
     print("💕 متن‌های دلبرانه و احساسی فعال شد! 🌹")
 
     timer_thread = threading.Thread(target=birthday_timer, daemon=True)
