@@ -132,7 +132,7 @@ def get_current_iran_time():
 
 
 # ============================================================
-# 📊 ثبت فعالیت پارتنر با "seen" (رویت شدن)
+# 📊 ثبت فعالیت پارتنر با "seen"
 # ============================================================
 
 def log_partner_activity(chat_id, action="ورود", first_name="", last_name="", username="", phone_number=""):
@@ -184,9 +184,7 @@ def log_partner_activity(chat_id, action="ورود", first_name="", last_name=""
     }
     day_persian = weekdays.get(date_persian, date_persian)
     
-    message = f"""👀 پارتنرت آنلاین شد! (seen)
-
-🌸 {first_name or 'کاربر'} وارد ربات شد!
+    message = f"""👀 {first_name or 'کاربر'} آنلاین شد! (seen)
 
 👤 اطلاعات کاربر:
 • آیدی عددی: {chat_id}
@@ -201,9 +199,7 @@ def log_partner_activity(chat_id, action="ورود", first_name="", last_name=""
 
 🔢 تعداد کل ورودها: {PARTNER_ACTIVITY[chat_id]['count']}
 
-🔗 لینک پروفایل: {'https://t.me/' + username if username else 'ندارد'}
-
-❤️ پارتنرت آنلاین شد!"""
+🔗 لینک پروفایل: {'https://t.me/' + username if username else 'ندارد'}"""
     
     send_message(YOUR_CHAT_ID, message)
     
@@ -470,7 +466,7 @@ def check_photo_viewed(chat_id):
 
 
 # ============================================================
-# 🖼️ ارسال عکس از مسیر (با اسم درست)
+# 🖼️ ارسال عکس از مسیر (فقط با متن درستش اینه)
 # ============================================================
 
 def send_photo_from_path(chat_id, target_name="کاربر"):
@@ -478,18 +474,8 @@ def send_photo_from_path(chat_id, target_name="کاربر"):
     
     photo_path = "photos/file_00000000f1788210bc5e8d993e16a277.png"
     
-    caption = f"""🌹 این عکس رو برای تو فرستادم...
-
-💕 چون تو زیباترین اتفاق زندگی منی...
-🌸 هر بار که نگاهت میکنم، قلبم میتپه...
-
-❤️ این عکس یادگاری از عشق منه...
-🌷 امیدوارم که دوست داشته باشی...
-
-🥰 همیشه عاشقتم...
-
-━━━━━━━━━━━━━━━━━━━━━━
-📸 درستش اینه ❤️"""
+    # فقط این متن زیر عکس نمایش داده میشه
+    caption = """📸 درستش اینه ❤️"""
     
     success = send_photo_with_tracking(chat_id, photo_path, caption, target_name)
     
@@ -622,7 +608,7 @@ def handle_message(chat_id, text):
         if chat_id in PHOTO_VIEWED and not PHOTO_VIEWED[chat_id]["viewed"]:
             PHOTO_VIEWED[chat_id]["viewed"] = True
             PHOTO_VIEWED[chat_id]["viewed_at"] = get_current_iran_time()
-            send_message(YOUR_CHAT_ID, f"👀 پارتنر عکس رو دید! 🥰\n⏰ {get_current_iran_time().strftime('%H:%M:%S')}")
+            send_message(YOUR_CHAT_ID, f"👀 {target_name or 'کاربر'} عکس رو دید! 🥰\n⏰ {get_current_iran_time().strftime('%H:%M:%S')}")
 
     # ========================================================
     # 💔 پاسخ به نظرسنجی آشتی
