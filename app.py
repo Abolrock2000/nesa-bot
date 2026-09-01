@@ -13,7 +13,7 @@ app = Flask(__name__)
 # 🔐 تنظیمات ربات
 # ============================================================
 
-TOKEN = os.environ.get("BOT_TOKEN", "")
+TOKEN = "8967116754:AAFJlNPRH8Cht-8qKo3zEHCJvSX1JrBGGXQ"
 
 YOUR_CHAT_ID = "1228473012"
 PARTNER_CHAT_ID = "7706282234"
