@@ -105,55 +105,56 @@ GIRLS_DAY_MESSAGE = """🎀 روز دختر مبارک دخترم... 🎀
 """
 
 # ============================================================
-# 💕 پاسخ‌های عاشقانه
+# 💕 متن‌های آشتی (طنز و صمیمی)
 # ============================================================
 
+RECONCILE_MESSAGES = [
+    "چشم آهو میای یا من میام واسه آشتی ... 🌹",
+    "🥺 برای بار دوم میپرسم عروس خانوم وکیلم...",
+    "💗 برای آخرین بار آتشی میپرسه وکیلم...",
+    "عشقم خب تکلیف بچه تو شکمت چی میشه میخوای بدون پدر بزرگ شه😭؟",
+    "🥺 چشم آهو جواب بده دیگه... وکیلم یا نه؟",
+    "🌹 عروس خانوم، آتشی با دسته‌گل اومده... وکیلم؟",
+    "😂 خانوم محترم، پرونده آشتی هنوز بازه... امضا می‌کنی؟",
+    "💗 آهو جان یه بله کوچولو بگو، آتشی منتظره...",
+    "🥺 خب دیگه قهر بسه عروس خانوم... وکیلم؟",
+    "🌹 آتشی هنوز پشت در دادگاه آشتی منتظره 😂",
+    "💍 عروس خانوم، جواب این خواستگار پشیمون رو نمی‌دی؟ 😂",
+    "❤️ آهو جان، یه بله بگو پرونده صلح رو ببندیم...",
+    "😂 قاضی محترم آهو، حکم آشتی رو صادر نمی‌کنی؟",
+    "🥺 من اومدم درخواست صلح بدم... فقط یه بله می‌خوام.",
+    "💗 آتشی کوتاه نمیاد... آخرش باید بگی وکیلم 😂",
+    "🌹 آهو جان، قهرتم قشنگه ولی آشتی‌کردنت قشنگ‌تره...",
+    "🥺 عروس خانوم، آتشی هنوز منتظر جواب نهاییه...",
+    "❤️ یه آشتی کوچولو، یه بغل کوچولو، بعدش هرچی تو بگی...",
+    "😂 خانوم وکیل، موکلت درخواست آشتی داده... قبول می‌کنی؟",
+    "🌸 آهو جان، دلم آشتی می‌خواد... وکیلم؟"
+]
+
+# برای پاسخ‌های عاشقانه بعد از «نه»
 LOVELY_RESPONSES = [
     "چشم آهو میای یا من میام واسه آشتی ... 🌹",
     "🥺 برای بار دوم میپرسم عروس خانوم وکیلم...",
     "💗 برای آخرین بار آتشی میپرسه وکیلم...",
     "عشقم خب تکلیف بچه تو شکمت چی میشه میخوای بدون پدر بزرگ شه😭؟",
-    "💖 من بدون تو نمیتونم... بیا که با هم قشنگتریم...",
-    "🌸 دلم برات تنگ شده... بیا که قلبم تنهاست...",
-    "💕 با تو بودن یعنی آرامش... بیا که دلم بهانه‌ات شده...",
-    "🌷 تو عشق اول و آخر منی... بیا پیشم...",
-    "💗 من همیشه دوست دارم... حتی اگه تو نباشی... اما بیا که تنهام...",
-    "🌹 میدونی که جای تو تو قلبم خالیه... بیا پر کن...",
-    "💖 قلبم فقط برای تو میزنه... بیا که صداشو بشنوی...",
-    "🌸 بدون تو زندگی بی‌رنگه... بیا که رنگی کن...",
-    "💕 تو بهترین اتفاق زندگی منی... نذار از دستت بدم...",
-    "🌷 با تو بودن یعنی بهشت... بیا که بهشتمو پس بده...",
-    "💗 دلم میخواد صداتو بشنوم... بیا که گوشم بهانهتو گرفته ...",
-    "🌹 تو تنها کسی هستی که میتونم باهاش حرف بزنم... بیا..."
+    "🥺 آهو جان هنوز منتظر جوابتم... وکیلم؟",
+    "🌹 عروس خانوم، پرونده آشتی هنوز بسته نشده 😂",
+    "💗 آتشی هنوز امید داره... یه بله کوچولو؟",
+    "😂 خانوم قاضی، حکم آشتی رو صادر نمی‌کنی؟",
+    "🥺 قهر بسه دیگه آهو جان... بیا آشتی کنیم.",
+    "❤️ یه بله کوچولو بده، آتشی خوشحال شه."
 ]
 
 # ============================================================
-# 💔 پیام‌های آشتی
+# ❤️ پیام‌های قبول آشتی
 # ============================================================
-
-RECONCILE_MESSAGES = [
-    "💕 میدونم که هنوز دلت برام تنگ میشه... مثل من که هر شب بهت فکر میکنم 🌙",
-    "🌸 یادته اولین بار که همدیگه رو دیدیم؟ اون روز دنیا برام قشنگ‌تر شد...",
-    "💖 بیا که دیگه نمیتونم بدون تو باشم... قلبم فقط برای تو میزنه ❤️",
-    "🌹 عشق من به تو مثل دریا بی‌نهایته... بیا که غرق میشیم...",
-    "🥺 هر شب با یاد تو میخوابم... بیا که خوابم پر از تو باشه...",
-    "💗 من به تو نیاز دارم... نه برای چیزی، فقط برای بودن با تو...",
-    "🌷 تو تنها کسی هستی که میتونم بگم دوست دارم... بیا پیشم...",
-    "🍃 با تو بودن آرامشه... بیا که دلم بهانه‌ات شده...",
-    "💕 من هیچوقت از دوست داشتن تو دست نمیکشم... بیا که قلبم منتظرته...",
-    "🌙 هر شب ستاره‌ها رو نگاه میکنم و برای تو آرزو میکنم...",
-    "💖 تو زیباترین احساس زندگی منی... بیا که با هم قشنگتریم...",
-    "🌸 دلم برات تنگ شده... بیا که قلبم تنهاست...",
-    "🌹 من همیشه دوست دارم... حتی اگه تو نباشی... اما بیا که تنهام...",
-    "💗 من تا آخرین نفس عاشقتم... بیا که با هم بمونیم..."
-]
 
 WIN_MESSAGES = [
-    "❤️❤️❤️ یاااای! میدونستم! 🥰\n\nبهترین تصمیم دنیا رو گرفتی! من همیشه عاشقتم! 🌹",
-    "💖 یااای! قلبم از خوشحالی میخواد بترکه! 😍\n\nمیدونستم که دوستم داری!",
-    "🥰 میدونستم تو هنوز هم عاشقی! بیا که بغلم کنم! 💕",
-    "💗 آخی جان! نمیدونی چقدر خوشحالم! تو بهترینی! 🌸",
-    "🌹 عشقم... میدونستم که میای! تو همیشه قلبمی! ❤️"
+    "❤️❤️❤️ یاااای! آهو گفت بله! 🥰",
+    "💖 بالاخره عروس خانوم گفت وکیلم! 😂❤️",
+    "🥰 میدونستم آتشی رو تنها نمیذاری! 🌹",
+    "💗 آشتی تأیید شد! پرونده با موفقیت بسته شد 😂❤️",
+    "🌹 یااای! بهترین جواب دنیا رو دادی... ❤️"
 ]
 
 # ============================================================
@@ -161,7 +162,9 @@ WIN_MESSAGES = [
 # ============================================================
 
 def get_current_iran_time():
-    utc_now = datetime.datetime.now(datetime.timezone.utc)
+    utc_now = datetime.datetime.now(
+        datetime.timezone.utc
+    )
     return utc_now.astimezone(
         datetime.timezone(IRAN_OFFSET)
     )
@@ -178,7 +181,6 @@ def log_partner_activity(
     username="",
     phone_number=""
 ):
-
     global PARTNER_ACTIVITY
 
     chat_id = str(chat_id)
@@ -189,7 +191,6 @@ def log_partner_activity(
     now = get_current_iran_time()
 
     if chat_id not in PARTNER_ACTIVITY:
-
         PARTNER_ACTIVITY[chat_id] = {
             "first_seen": now,
             "last_seen": now,
@@ -290,7 +291,6 @@ def report_user_interaction(
     username="",
     phone_number=""
 ):
-
     chat_id = str(chat_id)
 
     if chat_id == YOUR_CHAT_ID:
@@ -329,7 +329,6 @@ MEETING_DATE = datetime.datetime(
 )
 
 def get_meeting_seconds():
-
     now = get_current_iran_time()
 
     if now < MEETING_DATE:
@@ -344,7 +343,6 @@ def get_meeting_seconds():
 # ============================================================
 
 def hours_until_birthday():
-
     now = get_current_iran_time()
 
     birth = datetime.datetime(
@@ -357,7 +355,6 @@ def hours_until_birthday():
     )
 
     if now >= birth:
-
         birth = datetime.datetime(
             now.year + 1,
             BIRTH_MONTH,
@@ -378,7 +375,6 @@ def hours_until_birthday():
 # ============================================================
 
 def get_main_keyboard(chat_id=None):
-
     keyboard = [
         ["📸 عکس‌ها"],
         ["📅 روز آشنایی", "⏳ ساعت تا تولدت"],
@@ -386,19 +382,15 @@ def get_main_keyboard(chat_id=None):
     ]
 
     if str(chat_id) == YOUR_CHAT_ID:
-
         keyboard.append(
             ["📊 وضعیت پارتنر"]
         )
-
         keyboard.append(
             ["💔 درخواست آشتی"]
         )
-
         keyboard.append(
             ["🖼️ ارسال عکس"]
         )
-
         keyboard.append(
             ["🎀 روز دختر"]
         )
@@ -417,7 +409,6 @@ def get_main_keyboard(chat_id=None):
 # ============================================================
 
 def get_girls_day_menu():
-
     return {
         "keyboard": [
             ["🎀 ارسال به پارتنر", "🧪 ارسال به تست"],
@@ -431,7 +422,6 @@ def get_girls_day_menu():
 # ============================================================
 
 def get_photo_keyboard():
-
     return {
         "keyboard": [
             ["📸 عکس ۱", "📸 عکس ۲", "📸 عکس ۳"],
@@ -447,7 +437,6 @@ def get_photo_keyboard():
 # ============================================================
 
 def get_password_keyboard():
-
     return {
         "keyboard": [
             ["🔙 بازگشت به منو"]
@@ -460,7 +449,6 @@ def get_password_keyboard():
 # ============================================================
 
 def get_chat_keyboard():
-
     return {
         "keyboard": [
             ["📤 ارسال پیام به پارتنر"],
@@ -474,7 +462,6 @@ def get_chat_keyboard():
 # ============================================================
 
 def get_reconcile_keyboard():
-
     return {
         "keyboard": [
             ["❤️ بله، دوست دارم ❤️"],
@@ -488,7 +475,6 @@ def get_reconcile_keyboard():
 # ============================================================
 
 def get_reconcile_target_menu():
-
     return {
         "keyboard": [
             ["❤️ ارسال به پارتنر", "🧪 ارسال به تست"],
@@ -502,7 +488,6 @@ def get_reconcile_target_menu():
 # ============================================================
 
 def get_photo_send_menu():
-
     return {
         "keyboard": [
             ["📤 ارسال عکس به پارتنر", "🧪 ارسال عکس به تست"],
@@ -520,13 +505,10 @@ def send_message(
     text,
     reply_markup=None
 ):
-
     if not TOKEN:
-
         print(
             "❌ BOT_TOKEN تنظیم نشده است."
         )
-
         return False
 
     url = (
@@ -535,14 +517,12 @@ def send_message(
     )
 
     try:
-
         payload = {
             "chat_id": chat_id,
             "text": text
         }
 
         if reply_markup:
-
             payload["reply_markup"] = json.dumps(
                 reply_markup,
                 ensure_ascii=False
@@ -564,7 +544,6 @@ def send_message(
         )
 
     except Exception as e:
-
         print(
             "send_message error:",
             e
@@ -581,24 +560,19 @@ def send_photo(
     photo_path,
     caption=""
 ):
-
     if not TOKEN:
-
         print(
             "❌ BOT_TOKEN تنظیم نشده است."
         )
-
         return False
 
     try:
-
         url = (
             f"https://api.telegram.org/"
             f"bot{TOKEN}/sendPhoto"
         )
 
         if photo_path.startswith("http"):
-
             payload = {
                 "chat_id": chat_id,
                 "photo": photo_path,
@@ -614,23 +588,19 @@ def send_photo(
             return response.status_code == 200
 
         if not os.path.exists(photo_path):
-
             send_message(
                 chat_id,
                 "❌ عکس پیدا نشد!"
             )
-
             return False
 
         with open(
             photo_path,
             "rb"
         ) as photo:
-
             files = {
                 "photo": photo
             }
-
             data = {
                 "chat_id": chat_id,
                 "caption": caption
@@ -646,12 +616,10 @@ def send_photo(
         return response.status_code == 200
 
     except Exception as e:
-
         print(
             "send_photo error:",
             e
         )
-
         return False
 
 # ============================================================
@@ -664,7 +632,6 @@ def send_photo_with_tracking(
     caption="",
     target_name="کاربر"
 ):
-
     photo_id = (
         f"PHOTO_"
         f"{int(time.time())}_"
@@ -684,7 +651,6 @@ def send_photo_with_tracking(
     )
 
     if success:
-
         PHOTO_VIEWED[str(chat_id)] = {
             "photo_id": photo_id,
             "sent_at": get_current_iran_time(),
@@ -713,11 +679,9 @@ def send_photo_with_tracking(
 # ============================================================
 
 def check_photo_viewed(chat_id):
-
     chat_id = str(chat_id)
 
     if chat_id in PHOTO_VIEWED:
-
         return PHOTO_VIEWED[
             chat_id
         ]["viewed"]
@@ -732,7 +696,6 @@ def send_photo_from_path(
     chat_id,
     target_name="کاربر"
 ):
-
     photo_path = (
         "photos/"
         "file_00000000f1788210bc5e8d993e16a277.png"
@@ -748,22 +711,17 @@ def send_photo_from_path(
     )
 
     if success:
-
         def check_viewed():
-
             time.sleep(30)
 
             if check_photo_viewed(chat_id):
-
                 send_message(
                     YOUR_CHAT_ID,
                     f"""👀 {target_name} بعد از ارسال عکس با ربات تعامل کرد! 🥰
 
 ⏰ {get_current_iran_time().strftime('%H:%M:%S')}"""
                 )
-
             else:
-
                 send_message(
                     YOUR_CHAT_ID,
                     f"""⏳ {target_name} هنوز هیچ تعامل جدیدی با ربات نداشته.
@@ -782,7 +740,6 @@ def send_photo_from_path(
         chat_id,
         "❌ متاسفم! عکس پیدا نشد! 😢"
     )
-
     return False
 
 # ============================================================
@@ -794,18 +751,10 @@ def send_reconcile_survey(
     attempt=0,
     target_name="کاربر"
 ):
-
     if attempt >= len(RECONCILE_MESSAGES):
+        final_message = """💔 باشه عروس خانوم... آشتی رو فعلاً می‌ذاریم برای یه وقت دیگه 😌
 
-        final_message = """💔 باشه... من میمونم با عشقم...
-
-اما میدونم که تو هم دوستم داری... فقط زمان میخواد.
-
-🌹 من همیشه منتظرتم... با تمام قلبم.
-
-💕 دوستت دارم، حتی اگه الان نتونی بیای...
-
-🍃 هر وقت آماده شدی، من اینجام..."""
+🌹 هر وقت خواستی، آتشی اینجاست."""
 
         send_message(
             chat_id,
@@ -822,21 +771,24 @@ def send_reconcile_survey(
 
         send_message(
             YOUR_CHAT_ID,
-            f"💔 {target_name} درخواست آشتی را ادامه نداد."
+            f"💔 {target_name} فعلاً درخواست آشتی رو ادامه نداد."
         )
-
         return
 
-    message = f"""💔 {RECONCILE_MESSAGES[attempt]}
+    extra_messages = [
+        "منتظر عشقت هستم... 🌹",
+        "آتشی منتظر جوابه... 🥺",
+        "عروس خانوم تصمیم بگیر دیگه 😂",
+        "آهو جان وکیلم؟ ❤️",
+        "یه بله کوچولو بده... 💗"
+    ]
 
-🌹 {random.choice([
-    'منتظر عشقت هستم...',
-    'قلبم برای تو میتپه...',
-    'بیا که عاشقتم...',
-    'دلم برات تنگ شده...',
-    'تو بهترینی...'
-])}
-"""
+    extra = random.choice(extra_messages)
+
+    message = (
+        f"💔 {RECONCILE_MESSAGES[attempt]}\n\n"
+        f"🌹 {extra}"
+    )
 
     send_message(
         chat_id,
@@ -860,7 +812,6 @@ def handle_reconcile_response(
     chat_id,
     response
 ):
-
     chat_id = str(chat_id)
 
     state = RECONCILE_STATE.get(
@@ -882,7 +833,6 @@ def handle_reconcile_response(
     )
 
     if response == "❤️ بله، دوست دارم ❤️":
-
         send_message(
             chat_id,
             random.choice(WIN_MESSAGES)
@@ -891,18 +841,18 @@ def handle_reconcile_response(
         send_message(
             chat_id,
             random.choice([
-                "💕 میدونستم! عشقم!",
-                "🌹 تو همیشه قلبمی!",
-                "💖 من همیشه عاشقتم!",
-                "🌸 بهترین خبر زندگی‌ام!",
-                "🥰 عشق منی! همیشه!"
+                "💕 آشتی ثبت شد عروس خانوم 😂❤️",
+                "🌹 وکیلم تأیید شد! 😂",
+                "💖 بالاخره آهو راضی شد 🥰",
+                "🌸 پرونده آشتی بسته شد ❤️",
+                "🥰 آتشی خوشحال شد!"
             ]),
             get_main_keyboard(chat_id)
         )
 
         send_message(
             YOUR_CHAT_ID,
-            f"""🎉🎉🎉 {target_name} گفت بله! ❤️
+            f"""🎉 {target_name} گفت بله! ❤️
 
 🆔 {chat_id}
 
@@ -915,25 +865,12 @@ def handle_reconcile_response(
             "status": "accepted",
             "attempt": attempt
         }
-
         return
 
     if response == "💔 نه، نمیتونم 😢":
-
         send_message(
             chat_id,
             random.choice(LOVELY_RESPONSES)
-        )
-
-        send_message(
-            chat_id,
-            random.choice([
-                "💕 میدونم که دوستم داری... فقط زمان میخواد...",
-                "🌹 من صبر میکنم... تا ابد...",
-                "💖 قلبم برای تو میزنه... همیشه...",
-                "🌸 تو بهترین اتفاق زندگی منی...",
-                "🥺 دلم برات تنگ شده... بیا..."
-            ])
         )
 
         send_message(
@@ -958,11 +895,9 @@ def handle_message(
     chat_id,
     text
 ):
-
     chat_id = str(chat_id)
     text = (text or "").strip()
 
-    # ساخت حافظه کاربر
     user_access.setdefault(
         chat_id,
         {
@@ -977,11 +912,10 @@ def handle_message(
     user = user_access[chat_id]
 
     # ========================================================
-    # 🔙 بازگشت به منو - باید قبل از stateها بررسی شود
+    # 🔙 بازگشت به منو
     # ========================================================
 
     if text == "🔙 بازگشت به منو":
-
         photos_access = user.get(
             "photos",
             False
@@ -1008,7 +942,6 @@ def handle_message(
     # ========================================================
 
     if text == "/start":
-
         user_access[chat_id] = {
             "photos": False,
             "waiting_for_password": False,
@@ -1039,9 +972,7 @@ def handle_message(
     # ========================================================
 
     if text == "🎀 روز دختر":
-
         if chat_id == YOUR_CHAT_ID:
-
             user["mode"] = "girls_day"
 
             send_message(
@@ -1051,7 +982,6 @@ def handle_message(
             )
 
         else:
-
             send_message(
                 chat_id,
                 "❌ این بخش فقط برای صاحب ربات است."
@@ -1068,9 +998,7 @@ def handle_message(
         and
         user.get("mode") == "girls_day"
     ):
-
         if chat_id == YOUR_CHAT_ID:
-
             send_message(
                 chat_id,
                 "🎀 در حال ارسال پیام روز دختر..."
@@ -1082,15 +1010,12 @@ def handle_message(
             )
 
             if success:
-
                 send_message(
                     chat_id,
                     "✅ پیام روز دختر به پارتنر ارسال شد! 🎀",
                     get_main_keyboard(chat_id)
                 )
-
             else:
-
                 send_message(
                     chat_id,
                     "❌ ارسال پیام روز دختر ناموفق بود."
@@ -1109,9 +1034,7 @@ def handle_message(
         and
         user.get("mode") == "girls_day"
     ):
-
         if chat_id == YOUR_CHAT_ID:
-
             send_message(
                 chat_id,
                 "🧪 در حال ارسال پیام روز دختر به تست..."
@@ -1123,15 +1046,12 @@ def handle_message(
             )
 
             if success:
-
                 send_message(
                     chat_id,
                     "✅ پیام روز دختر به اکانت تست ارسال شد! 🎀",
                     get_main_keyboard(chat_id)
                 )
-
             else:
-
                 send_message(
                     chat_id,
                     "❌ ارسال پیام روز دختر ناموفق بود."
@@ -1146,9 +1066,7 @@ def handle_message(
     # ========================================================
 
     if text == "💔 درخواست آشتی":
-
         if chat_id == YOUR_CHAT_ID:
-
             user["mode"] = "reconcile"
 
             send_message(
@@ -1158,7 +1076,6 @@ def handle_message(
             )
 
         else:
-
             send_message(
                 chat_id,
                 "❌ این بخش فقط برای صاحب ربات است.",
@@ -1176,9 +1093,7 @@ def handle_message(
         and
         user.get("mode") == "reconcile"
     ):
-
         if chat_id == YOUR_CHAT_ID:
-
             send_message(
                 chat_id,
                 "💔 در حال ارسال درخواست آشتی..."
@@ -1190,7 +1105,6 @@ def handle_message(
             )
 
             if state.get("status") == "accepted":
-
                 send_message(
                     chat_id,
                     "❤️ پارتنرت قبلاً آشتی رو قبول کرده! 🥰",
@@ -1225,9 +1139,7 @@ def handle_message(
         and
         user.get("mode") == "reconcile"
     ):
-
         if chat_id == YOUR_CHAT_ID:
-
             send_message(
                 chat_id,
                 "🧪 در حال ارسال درخواست آشتی به تست..."
@@ -1254,13 +1166,11 @@ def handle_message(
     # ========================================================
 
     if chat_id != YOUR_CHAT_ID:
-
         if (
             chat_id in PHOTO_VIEWED
             and
             not PHOTO_VIEWED[chat_id]["viewed"]
         ):
-
             PHOTO_VIEWED[
                 chat_id
             ]["viewed"] = True
@@ -1295,9 +1205,7 @@ def handle_message(
         "❤️ بله، دوست دارم ❤️",
         "💔 نه، نمیتونم 😢"
     ]:
-
         if chat_id != YOUR_CHAT_ID:
-
             handle_reconcile_response(
                 chat_id,
                 text
@@ -1313,12 +1221,10 @@ def handle_message(
         "waiting_for_chat_message",
         False
     ):
-
         if text in [
             "🔙 لغو",
             "🔙 بازگشت به منو"
         ]:
-
             user[
                 "waiting_for_chat_message"
             ] = False
@@ -1332,38 +1238,30 @@ def handle_message(
             return
 
         if not text:
-
             send_message(
                 chat_id,
                 "📝 لطفاً یک پیام بنویس."
             )
-
             return
 
         if chat_id == YOUR_CHAT_ID:
-
             sent = send_message(
                 PARTNER_CHAT_ID,
                 f"💬 پیام از طرف عشقت:\n\n{text}"
             )
-
         else:
-
             sent = send_message(
                 YOUR_CHAT_ID,
                 f"💬 پیام از طرف پارتنرت:\n\n{text}"
             )
 
         if sent:
-
             send_message(
                 chat_id,
                 "✅ پیامت ارسال شد ❤️",
                 get_chat_keyboard()
             )
-
         else:
-
             send_message(
                 chat_id,
                 "❌ ارسال پیام ناموفق بود.",
@@ -1381,7 +1279,6 @@ def handle_message(
     # ========================================================
 
     if text == "💬 چت دوطرفه":
-
         user[
             "waiting_for_chat_message"
         ] = False
@@ -1399,7 +1296,6 @@ def handle_message(
     # ========================================================
 
     if text == "📤 ارسال پیام به پارتنر":
-
         user[
             "waiting_for_chat_message"
         ] = True
@@ -1417,9 +1313,7 @@ def handle_message(
     # ========================================================
 
     if text == "🖼️ ارسال عکس":
-
         if chat_id == YOUR_CHAT_ID:
-
             send_message(
                 chat_id,
                 "🖼️ عکس رو به چه کسی می‌خوای ارسال کنی؟",
@@ -1433,9 +1327,7 @@ def handle_message(
     # ========================================================
 
     if text == "📤 ارسال عکس به پارتنر":
-
         if chat_id == YOUR_CHAT_ID:
-
             send_message(
                 chat_id,
                 "📤 ارسال عکس به پارتنر..."
@@ -1447,14 +1339,11 @@ def handle_message(
             )
 
             if success:
-
                 send_message(
                     chat_id,
                     "✅ عکس با موفقیت ارسال شد! 🌹"
                 )
-
             else:
-
                 send_message(
                     chat_id,
                     "❌ ارسال عکس ناموفق بود."
@@ -1467,9 +1356,7 @@ def handle_message(
     # ========================================================
 
     if text == "🧪 ارسال عکس به تست":
-
         if chat_id == YOUR_CHAT_ID:
-
             send_message(
                 chat_id,
                 "🧪 ارسال عکس به اکانت تست..."
@@ -1481,14 +1368,11 @@ def handle_message(
             )
 
             if success:
-
                 send_message(
                     chat_id,
                     "✅ عکس به تست ارسال شد! 🌹"
                 )
-
             else:
-
                 send_message(
                     chat_id,
                     "❌ ارسال عکس ناموفق بود."
@@ -1501,23 +1385,18 @@ def handle_message(
     # ========================================================
 
     if text == "📊 وضعیت پارتنر":
-
         if chat_id != YOUR_CHAT_ID:
-
             send_message(
                 chat_id,
                 "❌ دسترسی ندارید."
             )
-
             return
 
         if not PARTNER_ACTIVITY:
-
             send_message(
                 chat_id,
                 "❌ هنوز هیچ تعاملی ثبت نشده است."
             )
-
             return
 
         partner_id = (
@@ -1552,36 +1431,25 @@ def handle_message(
         )
 
         if reconcile_status.get("status") == "accepted":
-
             reconcile_text = "❤️ آشتی کرد 🥰"
-
         elif reconcile_status.get("status") == "ended":
-
             reconcile_text = "💔 پایان یافت"
-
         elif reconcile_status.get("status") == "waiting":
-
             reconcile_text = "⏳ منتظر پاسخ"
-
         else:
-
             reconcile_text = "❓ درخواستی نشده"
 
         photo_status = "📸 عکسی ارسال نشده"
 
         if partner_id in PHOTO_VIEWED:
-
             if PHOTO_VIEWED[
                 partner_id
             ]["viewed"]:
-
                 photo_status = (
                     "👀 بعد از ارسال عکس "
                     "تعامل ثبت شد"
                 )
-
             else:
-
                 photo_status = (
                     "⏳ عکس ارسال شده؛ "
                     "هنوز تعامل جدیدی ثبت نشده"
@@ -1645,9 +1513,7 @@ def handle_message(
         "waiting_for_password",
         False
     ):
-
         if text == PASSWORD:
-
             user["photos"] = True
             user["waiting_for_password"] = False
 
@@ -1656,9 +1522,7 @@ def handle_message(
                 "✅ رمز درست بود!\n\n🔓 گالری باز شد ❤️",
                 get_photo_keyboard()
             )
-
         else:
-
             send_message(
                 chat_id,
                 "❌ رمز اشتباهه!\n\nدوباره امتحان کن ❤️",
@@ -1672,12 +1536,10 @@ def handle_message(
     # ========================================================
 
     if text in PHOTOS:
-
         if user.get(
             "photos",
             False
         ):
-
             photo = PHOTOS[text]
 
             send_photo(
@@ -1685,9 +1547,7 @@ def handle_message(
                 photo["path"],
                 photo["caption"]
             )
-
         else:
-
             user[
                 "waiting_for_password"
             ] = True
@@ -1705,20 +1565,16 @@ def handle_message(
     # ========================================================
 
     if text == "📸 عکس‌ها":
-
         if user.get(
             "photos",
             False
         ):
-
             send_message(
                 chat_id,
                 "📸 کدوم عکس رو می‌خوای ببینی؟ ❤️",
                 get_photo_keyboard()
             )
-
         else:
-
             user[
                 "waiting_for_password"
             ] = True
@@ -1736,7 +1592,6 @@ def handle_message(
     # ========================================================
 
     if text == "📅 روز آشنایی":
-
         seconds = get_meeting_seconds()
         days = seconds // 86400
 
@@ -1776,7 +1631,6 @@ def handle_message(
     # ========================================================
 
     if text == "⏳ ساعت تا تولدت":
-
         hours = hours_until_birthday()
 
         send_message(
@@ -1850,13 +1704,10 @@ BIRTHDAY_MESSAGE = """🎂 تولدت مبارک، ahu goozlum... ❤️
 # ============================================================
 
 def birthday_timer():
-
     sent_today = False
 
     while True:
-
         try:
-
             now = get_current_iran_time()
 
             if (
@@ -1868,9 +1719,7 @@ def birthday_timer():
                 and
                 now.minute == BIRTH_MINUTE
             ):
-
                 if not sent_today:
-
                     print(
                         "🎂 ارسال پیام تولد..."
                     )
@@ -1890,7 +1739,6 @@ def birthday_timer():
                     if os.path.exists(
                         photo["path"]
                     ):
-
                         send_photo(
                             YOUR_CHAT_ID,
                             photo["path"],
@@ -1908,13 +1756,10 @@ def birthday_timer():
                     print(
                         "✅ پیام تولد ارسال شد."
                     )
-
             else:
-
                 sent_today = False
 
         except Exception as e:
-
             print(
                 "birthday_timer error:",
                 e
@@ -1931,11 +1776,8 @@ def birthday_timer():
     methods=["GET", "POST"]
 )
 def webhook():
-
     if request.method == "POST":
-
         try:
-
             data = request.get_json(
                 silent=True
             )
@@ -1943,12 +1785,7 @@ def webhook():
             if not data:
                 return "OK", 200
 
-            # =================================================
-            # پیام معمولی
-            # =================================================
-
             if "message" in data:
-
                 message = data["message"]
 
                 chat = message["chat"]
@@ -1984,25 +1821,19 @@ def webhook():
                 phone_number = ""
 
                 if contact:
-
                     phone_number = contact.get(
                         "phone_number",
                         ""
                     )
 
                 if text == "/start":
-
                     action = "🚀 کاربر /start زد"
-
                 elif text:
-
                     action = (
                         f"🖱️ کاربر دکمه/پیام فرستاد:\n"
                         f"{text}"
                     )
-
                 else:
-
                     action = (
                         "💬 کاربر یک Update بدون متن فرستاد"
                     )
@@ -2021,12 +1852,7 @@ def webhook():
                     text
                 )
 
-            # =================================================
-            # Callback Query
-            # =================================================
-
             elif "callback_query" in data:
-
                 callback = data[
                     "callback_query"
                 ]
@@ -2061,12 +1887,7 @@ def webhook():
                     ""
                 )
 
-            # =================================================
-            # Edited Message
-            # =================================================
-
             elif "edited_message" in data:
-
                 edited = data[
                     "edited_message"
                 ]
@@ -2096,7 +1917,6 @@ def webhook():
                 )
 
         except Exception as e:
-
             print(
                 "Webhook error:",
                 e
@@ -2113,7 +1933,6 @@ def webhook():
     methods=["GET"]
 )
 def health():
-
     return "OK", 200
 
 # ============================================================
@@ -2121,7 +1940,6 @@ def health():
 # ============================================================
 
 if __name__ == "__main__":
-
     print(
         "🚀 ربات ahu goozlum روشن شد..."
     )
@@ -2158,20 +1976,12 @@ if __name__ == "__main__":
         "💔 منوی درخواست آشتی مستقل از روز دختر است!"
     )
 
-    # ========================================================
-    # Thread تولد
-    # ========================================================
-
     timer_thread = threading.Thread(
         target=birthday_timer,
         daemon=True
     )
 
     timer_thread.start()
-
-    # ========================================================
-    # پورت Render
-    # ========================================================
 
     port = int(
         os.environ.get(
