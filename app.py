@@ -29,10 +29,7 @@ BIRTH_MINUTE = 0
 
 IRAN_OFFSET = datetime.timedelta(hours=3, minutes=30)
 
-WEBSITE_URL = os.environ.get(
-    "WEBSITE_URL",
-    "https://abolfazll-bot.onrender.com"
-)
+WEBSITE_URL = "https://nesa-bot.onrender.com"
 
 # ============================================================
 # 🗂️ حافظه موقت
@@ -43,14 +40,14 @@ PARTNER_ACTIVITY = {}
 RECONCILE_STATE = {}
 PHOTO_VIEWED = {}
 
+# ربات فعال است
+BOT_ACTIVE = True
+
 # ============================================================
 # 🌹 تنظیمات صفحه گل رز
 # ============================================================
 
-ROSE_SECRET = os.environ.get(
-    "ROSE_SECRET",
-    "CHANGE_THIS_ROSE_SECRET"
-)
+ROSE_SECRET = "ROSE_SECRET_KEY_2026"
 
 rose_signer = URLSafeSerializer(
     ROSE_SECRET,
@@ -131,7 +128,7 @@ RECONCILE_MESSAGES = [
     "🥺 برای بار دوم میپرسم عروس خانوم وکیلم...",
     "💗 برای آخرین بار آتشی میپرسه وکیلم...",
     "عشقم خب تکلیف بچه تو شکمت چی میشه میخوای بدون پدر بزرگ شه😭؟",
-    "🥺 چشم آهو جواب بده دیگه... وکیلم؟",
+    "🥺 چشم آهو جواب بده دیگه... وکیلم یا نه؟",
     "🌹 عروس خانوم، آتشی با دسته‌گل اومده... وکیلم؟",
     "😂 خانوم محترم، پرونده آشتی هنوز بازه... امضا می‌کنی؟",
     "💗 آهو جان یه بله کوچولو بگو، آتشی منتظره...",
@@ -411,7 +408,6 @@ def get_main_keyboard(chat_id=None):
             ["💔 درخواست آشتی"]
         )
 
-        # 🌹 گزینه جدید
         keyboard.append(
             ["🌹 صفحه آشتی"]
         )
@@ -1102,6 +1098,17 @@ def handle_message(
     text = (
         text or ""
     ).strip()
+
+    # ========================================================
+    # 🚫 اگر ربات غیرفعال است (به جز مالک)
+    # ========================================================
+
+    if not BOT_ACTIVE and chat_id != YOUR_CHAT_ID:
+        send_message(
+            chat_id,
+            "🔒 ربات غیرفعال شده است."
+        )
+        return
 
     user_access.setdefault(
         chat_id,
@@ -2536,6 +2543,10 @@ if __name__ == "__main__":
 
     print(
         "🌹 صفحه گل رز فعال است!"
+    )
+
+    print(
+        f"🌐 آدرس وب‌سایت: {WEBSITE_URL}"
     )
 
     timer_thread = threading.Thread(
