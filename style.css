@@ -1,0 +1,840 @@
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+body {
+    background:
+        radial-gradient(
+            circle at center,
+            #250507 0%,
+            #090304 45%,
+            #020202 100%
+        );
+
+    color: white;
+
+    font-family:
+        Arial,
+        sans-serif;
+}
+
+/* =========================================================
+   Loading
+========================================================= */
+
+.loading-screen {
+
+    position: fixed;
+    inset: 0;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    z-index: 1000;
+
+    background:
+        radial-gradient(
+            circle,
+            #30070b,
+            #050505 70%
+        );
+
+    transition:
+        opacity .8s ease,
+        visibility .8s ease;
+}
+
+.loading-screen.hidden {
+
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.loading-card {
+
+    width: min(90%, 420px);
+
+    padding: 35px 25px;
+
+    border-radius: 24px;
+
+    text-align: center;
+
+    background:
+        rgba(20, 5, 7, .9);
+
+    border:
+        1px solid rgba(255, 80, 100, .2);
+
+    box-shadow:
+        0 0 60px rgba(150, 0, 20, .25);
+}
+
+.code-title {
+
+    font-size: 30px;
+    font-weight: bold;
+
+    color: #ff6b7d;
+
+    margin-bottom: 18px;
+}
+
+.loading-text {
+
+    color: #ddd;
+
+    margin-bottom: 18px;
+
+    font-size: 15px;
+}
+
+.loading-bar {
+
+    height: 7px;
+    width: 100%;
+
+    background: #24070b;
+
+    border-radius: 10px;
+
+    overflow: hidden;
+
+    margin-bottom: 25px;
+}
+
+#loadingProgress {
+
+    height: 100%;
+    width: 0%;
+
+    background:
+        linear-gradient(
+            90deg,
+            #7d0714,
+            #ff4f64
+        );
+
+    transition:
+        width .15s linear;
+}
+
+#startButton {
+
+    border: none;
+
+    padding: 14px 25px;
+
+    border-radius: 30px;
+
+    cursor: pointer;
+
+    color: white;
+
+    font-size: 15px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #a20b1b,
+            #5d0710
+        );
+
+    box-shadow:
+        0 8px 30px rgba(120, 0, 20, .3);
+
+    transition:
+        transform .2s ease;
+}
+
+#startButton:hover {
+
+    transform:
+        scale(1.05);
+}
+
+/* =========================================================
+   Scene
+========================================================= */
+
+.scene {
+
+    position: fixed;
+    inset: 0;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    perspective: 1000px;
+}
+
+/* =========================================================
+   Rose
+========================================================= */
+
+.rose-wrapper {
+
+    position: relative;
+
+    width: 250px;
+    height: 500px;
+
+    transform-origin: bottom center;
+
+    transform:
+        scale(.8);
+
+    transition:
+        transform 2s ease;
+}
+
+.rose-wrapper.bloom {
+
+    transform:
+        scale(1);
+}
+
+/* =========================================================
+   Stem
+========================================================= */
+
+.stem {
+
+    position: absolute;
+
+    bottom: 0;
+    left: 50%;
+
+    width: 12px;
+    height: 330px;
+
+    transform:
+        translateX(-50%)
+        scaleY(0);
+
+    transform-origin: bottom;
+
+    border-radius: 20px;
+
+    background:
+        linear-gradient(
+            90deg,
+            #173c19,
+            #2f7d35,
+            #173c19
+        );
+
+    transition:
+        transform 2s ease;
+}
+
+.rose-wrapper.grow .stem {
+
+    transform:
+        translateX(-50%)
+        scaleY(1);
+}
+
+/* =========================================================
+   Thorns
+========================================================= */
+
+.thorn {
+
+    position: absolute;
+
+    width: 0;
+    height: 0;
+
+    border-top: 10px solid transparent;
+    border-bottom: 10px solid transparent;
+    border-right: 22px solid #275c2a;
+
+    opacity: 0;
+
+    transition:
+        opacity 1s ease 1s;
+}
+
+.rose-wrapper.grow .thorn {
+
+    opacity: 1;
+}
+
+.thorn-1 {
+
+    left: 42%;
+    bottom: 120px;
+
+    transform:
+        rotate(15deg);
+}
+
+.thorn-2 {
+
+    left: 55%;
+    bottom: 190px;
+
+    transform:
+        rotate(180deg);
+}
+
+.thorn-3 {
+
+    left: 42%;
+    bottom: 255px;
+
+    transform:
+        rotate(10deg);
+}
+
+/* =========================================================
+   Leaves
+========================================================= */
+
+.leaf {
+
+    position: absolute;
+
+    width: 105px;
+    height: 48px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #3b8a3e,
+            #174b1c
+        );
+
+    opacity: 0;
+
+    transition:
+        opacity 1.2s ease 1.3s,
+        transform 1.2s ease 1.3s;
+
+    border-radius:
+        100% 0 100% 0;
+}
+
+.rose-wrapper.grow .leaf {
+
+    opacity: 1;
+}
+
+.leaf-left {
+
+    left: 15px;
+    bottom: 160px;
+
+    transform:
+        rotate(-30deg)
+        scale(0);
+}
+
+.rose-wrapper.grow .leaf-left {
+
+    transform:
+        rotate(-30deg)
+        scale(1);
+}
+
+.leaf-right {
+
+    right: 10px;
+    bottom: 220px;
+
+    transform:
+        rotate(155deg)
+        scale(0);
+}
+
+.rose-wrapper.grow .leaf-right {
+
+    transform:
+        rotate(155deg)
+        scale(1);
+}
+
+/* =========================================================
+   Calyx
+========================================================= */
+
+.calyx {
+
+    position: absolute;
+
+    left: 50%;
+    bottom: 320px;
+
+    transform:
+        translateX(-50%);
+
+    width: 100px;
+    height: 70px;
+
+    z-index: 5;
+}
+
+.sepal {
+
+    position: absolute;
+
+    left: 50%;
+    bottom: 0;
+
+    width: 35px;
+    height: 70px;
+
+    transform-origin: bottom center;
+
+    background:
+        linear-gradient(
+            90deg,
+            #174818,
+            #3a813b
+        );
+
+    border-radius:
+        100% 0 100% 0;
+
+    opacity: 0;
+
+    transition:
+        opacity 1s ease 1.8s;
+}
+
+.rose-wrapper.grow .sepal {
+
+    opacity: 1;
+}
+
+.s1 {
+    transform:
+        translateX(-50%)
+        rotate(-55deg);
+}
+
+.s2 {
+    transform:
+        translateX(-50%)
+        rotate(-28deg);
+}
+
+.s3 {
+    transform:
+        translateX(-50%)
+        rotate(0deg);
+}
+
+.s4 {
+    transform:
+        translateX(-50%)
+        rotate(28deg);
+}
+
+.s5 {
+    transform:
+        translateX(-50%)
+        rotate(55deg);
+}
+
+/* =========================================================
+   Rose Head
+========================================================= */
+
+.rose-head {
+
+    position: absolute;
+
+    left: 50%;
+    bottom: 335px;
+
+    width: 170px;
+    height: 170px;
+
+    transform:
+        translateX(-50%)
+        scale(.05);
+
+    transform-origin: center;
+
+    opacity: 0;
+
+    transition:
+        transform 2.5s cubic-bezier(.17,.67,.3,1.4),
+        opacity 1s ease;
+}
+
+.rose-wrapper.bloom .rose-head {
+
+    transform:
+        translateX(-50%)
+        scale(1);
+
+    opacity: 1;
+}
+
+/* =========================================================
+   Petals
+========================================================= */
+
+.petals {
+
+    position: relative;
+
+    width: 100%;
+    height: 100%;
+
+    transform-style: preserve-3d;
+}
+
+.petal {
+
+    position: absolute;
+
+    left: 50%;
+    top: 50%;
+
+    width: 80px;
+    height: 105px;
+
+    transform-origin: 50% 100%;
+
+    border-radius:
+        70% 70% 45% 45%;
+
+    background:
+        radial-gradient(
+            ellipse at 40% 35%,
+            #ff5266 0%,
+            #c91834 38%,
+            #650815 75%,
+            #260207 100%
+        );
+
+    box-shadow:
+        inset 0 0 20px rgba(255, 150, 160, .12),
+        0 8px 20px rgba(0,0,0,.4);
+
+    transform:
+        translate(-50%, -80%)
+        rotate(0deg)
+        translateY(-10px)
+        scale(.2);
+
+    transition:
+        transform 1.8s cubic-bezier(.2,.8,.2,1);
+}
+
+.p1 {
+    transform:
+        translate(-50%, -80%)
+        rotate(0deg)
+        translateY(-25px)
+        scale(.95);
+}
+
+.p2 {
+    transform:
+        translate(-50%, -80%)
+        rotate(45deg)
+        translateY(-25px)
+        scale(.95);
+}
+
+.p3 {
+    transform:
+        translate(-50%, -80%)
+        rotate(90deg)
+        translateY(-25px)
+        scale(.95);
+}
+
+.p4 {
+    transform:
+        translate(-50%, -80%)
+        rotate(135deg)
+        translateY(-25px)
+        scale(.95);
+}
+
+.p5 {
+    transform:
+        translate(-50%, -80%)
+        rotate(180deg)
+        translateY(-25px)
+        scale(.95);
+}
+
+.p6 {
+    transform:
+        translate(-50%, -80%)
+        rotate(225deg)
+        translateY(-25px)
+        scale(.95);
+}
+
+.p7 {
+    transform:
+        translate(-50%, -80%)
+        rotate(270deg)
+        translateY(-25px)
+        scale(.95);
+}
+
+.p8 {
+    transform:
+        translate(-50%, -80%)
+        rotate(315deg)
+        translateY(-25px)
+        scale(.95);
+}
+
+.p9 {
+    width: 65px;
+    height: 85px;
+
+    transform:
+        translate(-50%, -80%)
+        rotate(20deg)
+        translateY(-20px)
+        scale(.8);
+}
+
+.p10 {
+    width: 65px;
+    height: 85px;
+
+    transform:
+        translate(-50%, -80%)
+        rotate(110deg)
+        translateY(-20px)
+        scale(.8);
+}
+
+.p11 {
+    width: 65px;
+    height: 85px;
+
+    transform:
+        translate(-50%, -80%)
+        rotate(200deg)
+        translateY(-20px)
+        scale(.8);
+}
+
+.p12 {
+    width: 65px;
+    height: 85px;
+
+    transform:
+        translate(-50%, -80%)
+        rotate(290deg)
+        translateY(-20px)
+        scale(.8);
+}
+
+/* =========================================================
+   End Message
+========================================================= */
+
+.end-text {
+
+    position: absolute;
+
+    bottom: 8%;
+
+    width: min(90%, 500px);
+
+    text-align: center;
+
+    opacity: 0;
+
+    transform:
+        translateY(25px);
+
+    transition:
+        opacity 2s ease,
+        transform 2s ease;
+
+    pointer-events: none;
+}
+
+.end-text.show {
+
+    opacity: 1;
+
+    transform:
+        translateY(0);
+
+    pointer-events: auto;
+}
+
+.main-message {
+
+    font-size: 27px;
+    font-weight: bold;
+
+    color: #ff7180;
+
+    text-shadow:
+        0 0 20px rgba(255, 50, 70, .4);
+
+    margin-bottom: 12px;
+}
+
+.sub-message {
+
+    font-size: 15px;
+
+    line-height: 1.9;
+
+    color: #ddd;
+
+    margin-bottom: 22px;
+}
+
+.choice-buttons {
+
+    display: flex;
+
+    justify-content: center;
+
+    gap: 10px;
+
+    flex-wrap: wrap;
+}
+
+.choice {
+
+    border: none;
+
+    cursor: pointer;
+
+    border-radius: 25px;
+
+    padding: 12px 18px;
+
+    font-size: 14px;
+
+    color: white;
+
+    transition:
+        transform .2s ease,
+        opacity .2s ease;
+}
+
+.choice:hover {
+
+    transform:
+        translateY(-3px);
+}
+
+.talk {
+
+    background:
+        linear-gradient(
+            135deg,
+            #b3122c,
+            #690715
+        );
+}
+
+.time {
+
+    background:
+        rgba(255,255,255,.08);
+
+    border:
+        1px solid rgba(255,255,255,.12);
+}
+
+.thanks {
+
+    padding: 15px;
+
+    color: #ff8492;
+
+    font-size: 17px;
+}
+
+/* =========================================================
+   Falling petals
+========================================================= */
+
+.falling-petal {
+
+    position: fixed;
+
+    top: -30px;
+
+    width: 14px;
+    height: 20px;
+
+    border-radius:
+        100% 0 100% 0;
+
+    background:
+        #b51b34;
+
+    pointer-events: none;
+
+    animation:
+        fall linear forwards;
+}
+
+@keyframes fall {
+
+    to {
+
+        transform:
+            translateY(110vh)
+            rotate(500deg);
+
+        opacity: 0;
+    }
+}
+
+/* =========================================================
+   Mobile
+========================================================= */
+
+@media (max-width: 600px) {
+
+    .rose-wrapper {
+
+        transform:
+            scale(.7);
+    }
+
+    .rose-wrapper.bloom {
+
+        transform:
+            scale(.72);
+    }
+
+    .main-message {
+
+        font-size: 22px;
+    }
+
+    .sub-message {
+
+        font-size: 13px;
+    }
+}

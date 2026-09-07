@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>🌹 برای تو</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+
+</head>
+
+<body>
+
+<div class="loading-screen" id="loadingScreen">
+
+    <div class="loading-card">
+
+        <div class="code-title">
+            Love.css
+        </div>
+
+        <div class="loading-text">
+            در حال آماده کردن چیزی برای تو...
+        </div>
+
+        <div class="loading-bar">
+            <div id="loadingProgress"></div>
+        </div>
+
+        <button id="startButton">
+            🌹 لمس کن تا شکوفه بزند
+        </button>
+
+    </div>
+
+</div>
+
+
+<div class="scene">
+
+    <div class="rose-wrapper">
+
+        <div class="stem"></div>
+
+        <div class="thorn thorn-1"></div>
+        <div class="thorn thorn-2"></div>
+        <div class="thorn thorn-3"></div>
+
+        <div class="leaf leaf-left"></div>
+        <div class="leaf leaf-right"></div>
+
+        <div class="calyx">
+
+            <div class="sepal s1"></div>
+            <div class="sepal s2"></div>
+            <div class="sepal s3"></div>
+            <div class="sepal s4"></div>
+            <div class="sepal s5"></div>
+
+        </div>
+
+        <div class="rose-head">
+
+            <div class="petals">
+
+                <div class="petal p1"></div>
+                <div class="petal p2"></div>
+                <div class="petal p3"></div>
+                <div class="petal p4"></div>
+                <div class="petal p5"></div>
+                <div class="petal p6"></div>
+                <div class="petal p7"></div>
+                <div class="petal p8"></div>
+                <div class="petal p9"></div>
+                <div class="petal p10"></div>
+                <div class="petal p11"></div>
+                <div class="petal p12"></div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="end-text" id="endText">
+
+        <div class="main-message">
+            برای تو کدنویسیش کردم ❤️
+        </div>
+
+        <div class="sub-message">
+            چون بعضی احساس‌ها فقط با کلمه گفتنشون کافی نیست...
+        </div>
+
+        <div class="choice-buttons">
+
+            <button
+                class="choice talk"
+                onclick="roseResponse('talk')">
+
+                ❤️ بیا حرف بزنیم
+
+            </button>
+
+            <button
+                class="choice time"
+                onclick="roseResponse('time')">
+
+                🌱 فعلاً زمان می‌خوام
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<div id="fallingPetals"></div>
+
+
+<script>
+
+const ROSE_TOKEN = "{{ token }}";
+
+function roseResponse(choice) {
+
+    fetch(
+        `/rose/${ROSE_TOKEN}/response`,
+        {
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify({
+                choice: choice
+            })
+        }
+    )
+    .then(response => {
+
+        if (!response.ok) {
+            throw new Error("Request failed");
+        }
+
+        const buttons =
+            document.querySelector(".choice-buttons");
+
+        if (buttons) {
+
+            buttons.innerHTML =
+                "<div class='thanks'>پیامت به من رسید ❤️</div>";
+        }
+
+    })
+    .catch(() => {
+
+        alert(
+            "ارتباط با سرور برقرار نشد. دوباره امتحان کن 🌹"
+        );
+
+    });
+
+}
+
+</script>
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+
+</body>
+
+</html>
