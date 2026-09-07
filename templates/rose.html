@@ -1,182 +1,159 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
-
 <head>
-
     <meta charset="UTF-8">
-
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🌹 برای تو</title>
-
-    <link rel="stylesheet"
-          href="{{ url_for('static', filename='style.css') }}">
-
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            min-height: 100vh;
+            background: radial-gradient(circle at center, #1a0a0e 0%, #0d0508 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Tahoma', Arial, sans-serif;
+            overflow: hidden;
+            padding: 20px;
+        }
+        .container {
+            text-align: center;
+            z-index: 10;
+            max-width: 400px;
+            width: 100%;
+        }
+        .flower-big {
+            font-size: 120px;
+            animation: floatFlower 3s ease-in-out infinite;
+            filter: drop-shadow(0 0 50px rgba(255, 100, 150, 0.5));
+            cursor: pointer;
+            display: block;
+            margin-bottom: 20px;
+        }
+        @keyframes floatFlower {
+            0%, 100% { transform: translateY(0px) rotate(-3deg); }
+            50% { transform: translateY(-20px) rotate(3deg); }
+        }
+        .title {
+            color: #ffa0b5;
+            font-size: 28px;
+            margin-bottom: 15px;
+            text-shadow: 0 0 30px rgba(255, 80, 130, 0.3);
+        }
+        .subtitle {
+            color: #ffccd5;
+            font-size: 16px;
+            margin-bottom: 25px;
+            opacity: 0.9;
+            line-height: 1.8;
+        }
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 16px 20px;
+            margin-bottom: 12px;
+            border: none;
+            border-radius: 16px;
+            font-size: 17px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.08);
+            color: #ffccd5;
+            border: 1px solid rgba(255, 150, 180, 0.2);
+            backdrop-filter: blur(10px);
+        }
+        .btn:hover {
+            background: rgba(255, 80, 130, 0.2);
+            transform: scale(1.02);
+            border-color: #ff416c;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #ff416c, #ff758c);
+            color: white;
+            border: none;
+            box-shadow: 0 5px 25px rgba(255, 65, 108, 0.3);
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #ff2e5e, #ff6a82);
+            transform: scale(1.03);
+            box-shadow: 0 8px 35px rgba(255, 65, 108, 0.4);
+        }
+        .hearts {
+            margin-top: 20px;
+            font-size: 24px;
+            letter-spacing: 8px;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        .glow {
+            position: fixed;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255,50,100,0.1), transparent);
+            pointer-events: none;
+        }
+        .glow1 { top: -100px; right: -100px; }
+        .glow2 { bottom: -100px; left: -100px; }
+    </style>
 </head>
-
 <body>
+    <div class="glow glow1"></div>
+    <div class="glow glow2"></div>
 
-<div class="loading-screen" id="loadingScreen">
-
-    <div class="loading-card">
-
-        <div class="code-title">
-            Love.css
+    <div class="container">
+        <div class="flower-big">🌹</div>
+        <div class="title">برای تو</div>
+        <div class="subtitle">
+            💕 بعضی احساس‌ها رو نمیشه با کلمه گفت...<br>
+            🌹 پس این رو برای تو کدنویسی کردم
         </div>
 
-        <div class="loading-text">
-            در حال آماده کردن چیزی برای تو...
-        </div>
-
-        <div class="loading-bar">
-            <div id="loadingProgress"></div>
-        </div>
-
-        <button id="startButton">
-            🌹 لمس کن تا شکوفه بزند
+        <button class="btn btn-primary" onclick="sendChoice('talk')">
+            ❤️ بیا حرف بزنیم
         </button>
 
+        <button class="btn" onclick="sendChoice('time')">
+            🌱 فعلاً زمان می‌خوام
+        </button>
+
+        <div class="hearts">❤️ 💖 💕 💗 💘</div>
     </div>
 
-</div>
+    <script>
+        const token = "{{ token }}";
 
-
-<div class="scene">
-
-    <div class="rose-wrapper">
-
-        <div class="stem"></div>
-
-        <div class="thorn thorn-1"></div>
-        <div class="thorn thorn-2"></div>
-        <div class="thorn thorn-3"></div>
-
-        <div class="leaf leaf-left"></div>
-        <div class="leaf leaf-right"></div>
-
-        <div class="calyx">
-
-            <div class="sepal s1"></div>
-            <div class="sepal s2"></div>
-            <div class="sepal s3"></div>
-            <div class="sepal s4"></div>
-            <div class="sepal s5"></div>
-
-        </div>
-
-        <div class="rose-head">
-
-            <div class="petals">
-
-                <div class="petal p1"></div>
-                <div class="petal p2"></div>
-                <div class="petal p3"></div>
-                <div class="petal p4"></div>
-                <div class="petal p5"></div>
-                <div class="petal p6"></div>
-                <div class="petal p7"></div>
-                <div class="petal p8"></div>
-                <div class="petal p9"></div>
-                <div class="petal p10"></div>
-                <div class="petal p11"></div>
-                <div class="petal p12"></div>
-
-            </div>
-
-        </div>
-
-    </div>
-
-
-    <div class="end-text" id="endText">
-
-        <div class="main-message">
-            برای تو کدنویسیش کردم ❤️
-        </div>
-
-        <div class="sub-message">
-            چون بعضی احساس‌ها فقط با کلمه گفتنشون کافی نیست...
-        </div>
-
-        <div class="choice-buttons">
-
-            <button
-                class="choice talk"
-                onclick="roseResponse('talk')">
-
-                ❤️ بیا حرف بزنیم
-
-            </button>
-
-            <button
-                class="choice time"
-                onclick="roseResponse('time')">
-
-                🌱 فعلاً زمان می‌خوام
-
-            </button>
-
-        </div>
-
-    </div>
-
-</div>
-
-
-<div id="fallingPetals"></div>
-
-
-<script>
-
-const ROSE_TOKEN = "{{ token }}";
-
-function roseResponse(choice) {
-
-    fetch(
-        `/rose/${ROSE_TOKEN}/response`,
-        {
-            method: "POST",
-
-            headers: {
-                "Content-Type": "application/json"
-            },
-
-            body: JSON.stringify({
-                choice: choice
+        function sendChoice(choice) {
+            fetch(`/rose/${token}/response`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ choice: choice })
             })
+            .then(response => response.json())
+            .then(data => {
+                if (data.ok) {
+                    if (choice === 'talk') {
+                        alert('❤️ منتظرم... بیا حرف بزنیم');
+                    } else {
+                        alert('🌱 باشه... هر وقت آماده بودی');
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('❌ خطا! دوباره تلاش کن');
+            });
         }
-    )
-    .then(response => {
-
-        if (!response.ok) {
-            throw new Error("Request failed");
-        }
-
-        const buttons =
-            document.querySelector(".choice-buttons");
-
-        if (buttons) {
-
-            buttons.innerHTML =
-                "<div class='thanks'>پیامت به من رسید ❤️</div>";
-        }
-
-    })
-    .catch(() => {
-
-        alert(
-            "ارتباط با سرور برقرار نشد. دوباره امتحان کن 🌹"
-        );
-
-    });
-
-}
-
-</script>
-
-<script src="{{ url_for('static', filename='script.js') }}"></script>
-
+    </script>
 </body>
-
 </html>
