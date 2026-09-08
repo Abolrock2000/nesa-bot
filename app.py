@@ -396,7 +396,7 @@ def get_main_keyboard(chat_id=None):
         ["📸 عکس‌ها"],
         ["📅 روز آشنایی", "⏳ ساعت تا تولدت"],
         ["💬 چت دوطرفه"],
-        ["🧪 چت تست"]  # دکمه جدید برای چت با تست
+        ["🧪 چت تست"]
     ]
 
     # فقط صاحب ربات
@@ -625,12 +625,12 @@ def send_message(
     return False
 
 # ============================================================
-# 📸 ارسال عکس
+# 📸 ارسال عکس (با فایل ID یا لینک)
 # ============================================================
 
 def send_photo(
     chat_id,
-    photo_path,
+    photo_data,
     caption=""
 ):
 
@@ -649,52 +649,42 @@ def send_photo(
             f"bot{TOKEN}/sendPhoto"
         )
 
-        if photo_path.startswith("http"):
-
+        # اگر لینک اینترنتی است
+        if isinstance(photo_data, str) and photo_data.startswith("http"):
             payload = {
                 "chat_id": chat_id,
-                "photo": photo_path,
+                "photo": photo_data,
                 "caption": caption
             }
-
-            response = requests.post(
-                url,
-                data=payload,
-                timeout=30
-            )
-
+            response = requests.post(url, data=payload, timeout=30)
             return response.status_code == 200
 
-        if not os.path.exists(photo_path):
-
-            send_message(
-                chat_id,
-                "❌ عکس پیدا نشد!"
-            )
-
-            return False
-
-        with open(
-            photo_path,
-            "rb"
-        ) as photo:
-
-            files = {
-                "photo": photo
-            }
-
-            data = {
+        # اگر فایل ID از تلگرام است (با getFile گرفته شده)
+        if isinstance(photo_data, str) and photo_data.startswith("file_id:"):
+            file_id = photo_data.replace("file_id:", "")
+            payload = {
                 "chat_id": chat_id,
+                "photo": file_id,
                 "caption": caption
             }
+            response = requests.post(url, data=payload, timeout=30)
+            return response.status_code == 200
 
-            response = requests.post(
-                url,
-                data=data,
-                files=files,
-                timeout=30
-            )
+        # اگر مسیر فایل محلی است
+        if isinstance(photo_data, str) and os.path.exists(photo_data):
+            with open(photo_data, "rb") as photo:
+                files = {"photo": photo}
+                data = {"chat_id": chat_id, "caption": caption}
+                response = requests.post(url, data=data, files=files, timeout=30)
+            return response.status_code == 200
 
+        # اگر file_id مستقیم است
+        payload = {
+            "chat_id": chat_id,
+            "photo": photo_data,
+            "caption": caption
+        }
+        response = requests.post(url, data=payload, timeout=30)
         return response.status_code == 200
 
     except Exception as e:
@@ -707,12 +697,12 @@ def send_photo(
         return False
 
 # ============================================================
-# 🎥 ارسال فیلم
+# 🎥 ارسال فیلم (با فایل ID یا لینک)
 # ============================================================
 
 def send_video(
     chat_id,
-    video_path,
+    video_data,
     caption=""
 ):
 
@@ -731,52 +721,42 @@ def send_video(
             f"bot{TOKEN}/sendVideo"
         )
 
-        if video_path.startswith("http"):
-
+        # اگر لینک اینترنتی است
+        if isinstance(video_data, str) and video_data.startswith("http"):
             payload = {
                 "chat_id": chat_id,
-                "video": video_path,
+                "video": video_data,
                 "caption": caption
             }
-
-            response = requests.post(
-                url,
-                data=payload,
-                timeout=60
-            )
-
+            response = requests.post(url, data=payload, timeout=60)
             return response.status_code == 200
 
-        if not os.path.exists(video_path):
-
-            send_message(
-                chat_id,
-                "❌ فیلم پیدا نشد!"
-            )
-
-            return False
-
-        with open(
-            video_path,
-            "rb"
-        ) as video:
-
-            files = {
-                "video": video
-            }
-
-            data = {
+        # اگر فایل ID از تلگرام است
+        if isinstance(video_data, str) and video_data.startswith("file_id:"):
+            file_id = video_data.replace("file_id:", "")
+            payload = {
                 "chat_id": chat_id,
+                "video": file_id,
                 "caption": caption
             }
+            response = requests.post(url, data=payload, timeout=60)
+            return response.status_code == 200
 
-            response = requests.post(
-                url,
-                data=data,
-                files=files,
-                timeout=60
-            )
+        # اگر مسیر فایل محلی است
+        if isinstance(video_data, str) and os.path.exists(video_data):
+            with open(video_data, "rb") as video:
+                files = {"video": video}
+                data = {"chat_id": chat_id, "caption": caption}
+                response = requests.post(url, data=data, files=files, timeout=60)
+            return response.status_code == 200
 
+        # اگر file_id مستقیم است
+        payload = {
+            "chat_id": chat_id,
+            "video": video_data,
+            "caption": caption
+        }
+        response = requests.post(url, data=payload, timeout=60)
         return response.status_code == 200
 
     except Exception as e:
@@ -789,12 +769,12 @@ def send_video(
         return False
 
 # ============================================================
-# 🎵 ارسال موزیک (صوت)
+# 🎵 ارسال موزیک (با فایل ID یا لینک)
 # ============================================================
 
 def send_audio(
     chat_id,
-    audio_path,
+    audio_data,
     caption="",
     title="",
     performer=""
@@ -815,64 +795,58 @@ def send_audio(
             f"bot{TOKEN}/sendAudio"
         )
 
-        if audio_path.startswith("http"):
-
+        # اگر لینک اینترنتی است
+        if isinstance(audio_data, str) and audio_data.startswith("http"):
             payload = {
                 "chat_id": chat_id,
-                "audio": audio_path,
+                "audio": audio_data,
                 "caption": caption
             }
-
             if title:
                 payload["title"] = title
-
             if performer:
                 payload["performer"] = performer
-
-            response = requests.post(
-                url,
-                data=payload,
-                timeout=60
-            )
-
+            response = requests.post(url, data=payload, timeout=60)
             return response.status_code == 200
 
-        if not os.path.exists(audio_path):
-
-            send_message(
-                chat_id,
-                "❌ فایل صوتی پیدا نشد!"
-            )
-
-            return False
-
-        with open(
-            audio_path,
-            "rb"
-        ) as audio:
-
-            files = {
-                "audio": audio
-            }
-
-            data = {
+        # اگر فایل ID از تلگرام است
+        if isinstance(audio_data, str) and audio_data.startswith("file_id:"):
+            file_id = audio_data.replace("file_id:", "")
+            payload = {
                 "chat_id": chat_id,
+                "audio": file_id,
                 "caption": caption
             }
-
             if title:
-                data["title"] = title
-
+                payload["title"] = title
             if performer:
-                data["performer"] = performer
+                payload["performer"] = performer
+            response = requests.post(url, data=payload, timeout=60)
+            return response.status_code == 200
 
-            response = requests.post(
-                url,
-                data=data,
-                files=files,
-                timeout=60
-            )
+        # اگر مسیر فایل محلی است
+        if isinstance(audio_data, str) and os.path.exists(audio_data):
+            with open(audio_data, "rb") as audio:
+                files = {"audio": audio}
+                data = {"chat_id": chat_id, "caption": caption}
+                if title:
+                    data["title"] = title
+                if performer:
+                    data["performer"] = performer
+                response = requests.post(url, data=data, files=files, timeout=60)
+            return response.status_code == 200
 
+        # اگر file_id مستقیم است
+        payload = {
+            "chat_id": chat_id,
+            "audio": audio_data,
+            "caption": caption
+        }
+        if title:
+            payload["title"] = title
+        if performer:
+            payload["performer"] = performer
+        response = requests.post(url, data=payload, timeout=60)
         return response.status_code == 200
 
     except Exception as e:
@@ -890,7 +864,7 @@ def send_audio(
 
 def send_photo_with_tracking(
     chat_id,
-    photo_path,
+    photo_data,
     caption="",
     target_name="کاربر"
 ):
@@ -909,7 +883,7 @@ def send_photo_with_tracking(
 
     success = send_photo(
         chat_id,
-        photo_path,
+        photo_data,
         full_caption
     )
 
@@ -929,9 +903,7 @@ def send_photo_with_tracking(
 
 👤 گیرنده: {target_name}
 🆔 شناسه عکس: {photo_id}
-⏰ ساعت: {get_current_iran_time().strftime('%H:%M:%S')}
-
-⚠️ تلگرام به ربات Read Receipt واقعی برای عکس نمی‌دهد."""
+⏰ ساعت: {get_current_iran_time().strftime('%H:%M:%S')}"""
         )
 
         return True
@@ -1283,6 +1255,25 @@ def send_rose_page_to_test(
         )
 
 # ============================================================
+# 📥 دریافت فایل از تلگرام
+# ============================================================
+
+def get_file_path(file_id):
+    """دریافت مسیر فایل از تلگرام"""
+    try:
+        url = f"https://api.telegram.org/bot{TOKEN}/getFile"
+        response = requests.post(url, json={"file_id": file_id}, timeout=15)
+        if response.status_code == 200:
+            data = response.json()
+            if data.get("ok"):
+                file_path = data["result"]["file_path"]
+                return f"https://api.telegram.org/file/bot{TOKEN}/{file_path}"
+        return None
+    except Exception as e:
+        print("get_file_path error:", e)
+        return None
+
+# ============================================================
 # 🤖 پردازش پیام
 # ============================================================
 
@@ -1372,7 +1363,7 @@ def handle_message(
             user["chat_target"] = "test"
             send_message(
                 chat_id,
-                "📸 عکس رو به عنوان فایل (File) بفرست یا لینکش رو بذار:",
+                "📸 عکس رو بفرست (با دکمه پیوست یا لینک):",
                 get_test_chat_keyboard()
             )
         return
@@ -1387,7 +1378,7 @@ def handle_message(
             user["chat_target"] = "test"
             send_message(
                 chat_id,
-                "🎥 فیلم رو به عنوان فایل (File) بفرست یا لینکش رو بذار:",
+                "🎥 فیلم رو بفرست (با دکمه پیوست یا لینک):",
                 get_test_chat_keyboard()
             )
         return
@@ -1402,7 +1393,7 @@ def handle_message(
             user["chat_target"] = "test"
             send_message(
                 chat_id,
-                "🎵 فایل صوتی/موزیک رو به عنوان فایل (File) بفرست یا لینکش رو بذار:",
+                "🎵 فایل صوتی/موزیک رو بفرست (با دکمه پیوست یا لینک):",
                 get_test_chat_keyboard()
             )
         return
@@ -1517,7 +1508,7 @@ def handle_message(
             user["chat_target"] = "partner"
             send_message(
                 chat_id,
-                "📸 عکس رو به عنوان فایل (File) بفرست یا لینکش رو بذار:",
+                "📸 عکس رو بفرست (با دکمه پیوست یا لینک):",
                 get_chat_keyboard()
             )
         return
@@ -1532,7 +1523,7 @@ def handle_message(
             user["chat_target"] = "partner"
             send_message(
                 chat_id,
-                "🎥 فیلم رو به عنوان فایل (File) بفرست یا لینکش رو بذار:",
+                "🎥 فیلم رو بفرست (با دکمه پیوست یا لینک):",
                 get_chat_keyboard()
             )
         return
@@ -1547,7 +1538,7 @@ def handle_message(
             user["chat_target"] = "partner"
             send_message(
                 chat_id,
-                "🎵 فایل صوتی/موزیک رو به عنوان فایل (File) بفرست یا لینکش رو بذار:",
+                "🎵 فایل صوتی/موزیک رو بفرست (با دکمه پیوست یا لینک):",
                 get_chat_keyboard()
             )
         return
@@ -1558,6 +1549,7 @@ def handle_message(
 
     if file_data:
         file_type = file_data.get("type")
+        file_id = file_data.get("file_id")
         file_path = file_data.get("path")
         target = user.get("chat_target", "partner")
         file_caption = file_data.get("caption", "")
@@ -1569,21 +1561,47 @@ def handle_message(
         else:
             target_id = PARTNER_CHAT_ID
 
+        # اگر file_path وجود ندارد و file_id داریم، مسیر رو بگیر
+        if not file_path and file_id:
+            file_path = get_file_path(file_id)
+
         # ارسال فایل به مقصد
         if file_type == "photo":
-            success = send_photo(target_id, file_path, file_caption)
+            # اگر لینک مستقیم داریم استفاده کن، وگرنه از file_id
+            if file_path:
+                success = send_photo(target_id, file_path, file_caption)
+            else:
+                success = send_photo(target_id, f"file_id:{file_id}", file_caption)
+            
             if success:
                 send_message(chat_id, "✅ عکس ارسال شد! 📸", get_chat_keyboard() if user.get("mode") == "partner_chat" else get_test_chat_keyboard())
+            else:
+                send_message(chat_id, "❌ ارسال عکس ناموفق بود!", get_chat_keyboard() if user.get("mode") == "partner_chat" else get_test_chat_keyboard())
+
         elif file_type == "video":
-            success = send_video(target_id, file_path, file_caption)
+            if file_path:
+                success = send_video(target_id, file_path, file_caption)
+            else:
+                success = send_video(target_id, f"file_id:{file_id}", file_caption)
+            
             if success:
                 send_message(chat_id, "✅ فیلم ارسال شد! 🎥", get_chat_keyboard() if user.get("mode") == "partner_chat" else get_test_chat_keyboard())
+            else:
+                send_message(chat_id, "❌ ارسال فیلم ناموفق بود!", get_chat_keyboard() if user.get("mode") == "partner_chat" else get_test_chat_keyboard())
+
         elif file_type == "audio":
             title = file_data.get("title", "🎵")
             performer = file_data.get("performer", "❤️")
-            success = send_audio(target_id, file_path, file_caption, title, performer)
+            
+            if file_path:
+                success = send_audio(target_id, file_path, file_caption, title, performer)
+            else:
+                success = send_audio(target_id, f"file_id:{file_id}", file_caption, title, performer)
+            
             if success:
                 send_message(chat_id, "✅ موزیک ارسال شد! 🎵", get_chat_keyboard() if user.get("mode") == "partner_chat" else get_test_chat_keyboard())
+            else:
+                send_message(chat_id, "❌ ارسال موزیک ناموفق بود!", get_chat_keyboard() if user.get("mode") == "partner_chat" else get_test_chat_keyboard())
 
         user["waiting_for_file"] = False
         return
@@ -2632,26 +2650,62 @@ def webhook():
                 chat_id = str(chat["id"])
                 text = message.get("text", "")
                 
-                # دریافت اطلاعات فایل (اگه ارسال شده باشه)
+                # دریافت اطلاعات فایل
                 file_data = None
+                caption = message.get("caption", "")
+                
                 if "photo" in message:
-                    # عکس
-                    file_id = message["photo"][-1]["file_id"]
-                    file_path = f"https://api.telegram.org/file/bot{TOKEN}/{file_id}"  # نیاز به getFile
-                    file_data = {"type": "photo", "path": file_path, "caption": message.get("caption", "")}
+                    # عکس - بزرگترین سایز رو انتخاب کن
+                    photo = message["photo"][-1]
+                    file_data = {
+                        "type": "photo",
+                        "file_id": photo["file_id"],
+                        "caption": caption
+                    }
+                    
                 elif "video" in message:
-                    file_data = {"type": "video", "path": message["video"]["file_id"], "caption": message.get("caption", "")}
+                    video = message["video"]
+                    file_data = {
+                        "type": "video",
+                        "file_id": video["file_id"],
+                        "caption": caption
+                    }
+                    
                 elif "audio" in message:
-                    file_data = {"type": "audio", "path": message["audio"]["file_id"], "caption": message.get("caption", ""), "title": message["audio"].get("title", "🎵"), "performer": message["audio"].get("performer", "❤️")}
+                    audio = message["audio"]
+                    file_data = {
+                        "type": "audio",
+                        "file_id": audio["file_id"],
+                        "caption": caption,
+                        "title": audio.get("title", "🎵"),
+                        "performer": audio.get("performer", "❤️")
+                    }
+                    
                 elif "document" in message:
-                    # فایل معمولی
-                    mime = message["document"].get("mime_type", "")
+                    # فایل معمولی - بررسی MIME type
+                    doc = message["document"]
+                    mime = doc.get("mime_type", "")
+                    
                     if mime.startswith("image/"):
-                        file_data = {"type": "photo", "path": message["document"]["file_id"], "caption": message.get("caption", "")}
+                        file_data = {
+                            "type": "photo",
+                            "file_id": doc["file_id"],
+                            "caption": caption
+                        }
                     elif mime.startswith("video/"):
-                        file_data = {"type": "video", "path": message["document"]["file_id"], "caption": message.get("caption", "")}
+                        file_data = {
+                            "type": "video",
+                            "file_id": doc["file_id"],
+                            "caption": caption
+                        }
                     elif mime.startswith("audio/"):
-                        file_data = {"type": "audio", "path": message["document"]["file_id"], "caption": message.get("caption", "")}
+                        file_data = {
+                            "type": "audio",
+                            "file_id": doc["file_id"],
+                            "caption": caption,
+                            "title": doc.get("file_name", "🎵"),
+                            "performer": "❤️"
+                        }
 
                 first_name = chat.get("first_name", "")
                 last_name = chat.get("last_name", "")
@@ -2673,7 +2727,6 @@ def webhook():
                 
                 # اگر فایل وجود داره، handle_message رو با file_data صدا بزن
                 if file_data:
-                    # ابتدا handle_message رو برای پردازش فایل صدا بزن
                     handle_message(chat_id, text, file_data)
                 else:
                     handle_message(chat_id, text)
@@ -2722,6 +2775,7 @@ if __name__ == "__main__":
     print("💔 منوی درخواست آشتی مستقل از روز دختر است!")
     print("🌹 صفحه گل رز فعال است!")
     print("🧪 چت تست فعال است!")
+    print("📸 ارسال عکس/فیلم/موزیک در چت دوطرفه فعال است!")
     print(f"🌐 آدرس وب‌سایت: {WEBSITE_URL}")
 
     timer_thread = threading.Thread(target=birthday_timer, daemon=True)
