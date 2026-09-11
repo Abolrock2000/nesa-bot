@@ -6,6 +6,7 @@ app = Flask(__name__)
 TOKEN = os.getenv("BOT_TOKEN", "").strip()
 OWNER_CHAT_ID = "7989818498"
 PARTNER_CHAT_ID = "7706282234"
+TEST_CHAT_ID = "8892559849"
 PASSWORD = "1386"
 IRAN_TZ = datetime.timezone(datetime.timedelta(hours=3, minutes=30))
 MEETING_DATE = datetime.datetime(2026, 3, 15, tzinfo=IRAN_TZ)
@@ -59,6 +60,7 @@ def menu():
         ["📸 عکس‌ها"],
         ["📅 روز آشنایی", "⏳ ساعت تا تولدت"],
         ["💬 چت دوطرفه"],
+        ["🧪 اکانت تست"],
         ["🔙 بازگشت"]
     ]
 
@@ -110,7 +112,12 @@ def get_file_type(message):
     return None, None, None
 
 def forward_file(cid, kind, file_id, caption):
-    target = PARTNER_CHAT_ID if str(cid) == OWNER_CHAT_ID else OWNER_CHAT_ID
+    # مالک می‌تواند با اکانت تست 8892559849 آزمایش کند؛
+    # پیام‌های اکانت تست فقط به مالک برمی‌گردند.
+    if str(cid) == TEST_CHAT_ID:
+        target = OWNER_CHAT_ID
+    else:
+        target = PARTNER_CHAT_ID if str(cid) == OWNER_CHAT_ID else OWNER_CHAT_ID
     result = send_file(target, kind, file_id, caption)
     return result.get("ok", False)
 
@@ -182,8 +189,13 @@ def handle_message(cid, message):
         hours = int((birthday - current).total_seconds() // 3600)
         return send(cid, f"🎂 شمارش معکوس تولد\n\n⏳ {hours:,} ساعت مانده ❤️")
 
+    if text == "🧪 اکانت تست":
+        if str(cid) != OWNER_CHAT_ID:
+            return send(cid, "❌ این بخش فقط برای صاحب ربات است.")
+        return send(cid, f"🧪 اکانت تست فعال است.\\n\\n🆔 {TEST_CHAT_ID}\\nاکانت تست را با این ربات استارت کن و سپس از منوی چت استفاده کن.")
+
     if text == "💬 چت دوطرفه":
-        if str(cid) not in {OWNER_CHAT_ID, PARTNER_CHAT_ID}:
+        if str(cid) not in {OWNER_CHAT_ID, PARTNER_CHAT_ID, TEST_CHAT_ID}:
             return send(cid, "❌ دسترسی ندارید.")
         s["chat_message"] = False
         s["file_mode"] = None
@@ -204,8 +216,10 @@ def handle_message(cid, message):
         return send(cid, "فایل را همینجا بفرست.", chat_menu())
 
     if s["chat_message"] and text:
-        target = PARTNER_CHAT_ID if str(cid) == OWNER_CHAT_ID else OWNER_CHAT_ID
-        sender = "مالک" if str(cid) == OWNER_CHAT_ID else "پارتنر"
+        target = (
+            TEST_CHAT_ID if str(cid) == OWNER_CHAT_ID else OWNER_CHAT_ID
+        ) if str(cid) == OWNER_CHAT_ID else OWNER_CHAT_ID
+        sender = "مالک" if str(cid) == OWNER_CHAT_ID else ("اکانت تست" if str(cid) == TEST_CHAT_ID else "پارتنر")
         result = send(target, f"💬 پیام از {sender}:\n\n{text}")
         s["chat_message"] = False
         return send(cid, "✅ پیام ارسال شد." if result.get("ok") else "❌ ارسال ناموفق بود.", chat_menu())
@@ -232,6 +246,18 @@ def webhook():
 
         cid = str(message.get("chat", {}).get("id", ""))
         if cid:
+            user = message.get("from", {})
+            action = message.get("text") or message.get("caption") or "ارسال فایل/رسانه"
+            if str(cid) != OWNER_CHAT_ID:
+                info = (
+                    "👤 تعامل جدید\\n"
+                    f"🆔 {cid}\\n"
+                    f"📛 نام: {user.get('first_name','')} {user.get('last_name','')}\\n"
+                    f"🔗 یوزرنیم: @{user.get('username','—')}\\n"
+                    f"📌 اقدام: {action}\\n"
+                    f"⏰ زمان: {now():%Y/%m/%d %H:%M:%S}"
+                )
+                send(OWNER_CHAT_ID, info)
             handle_message(cid, message)
     except Exception as e:
         print("Webhook error:", repr(e))
@@ -244,7 +270,8 @@ def health():
         "status": "ok",
         "bot_token_configured": bool(TOKEN),
         "owner": OWNER_CHAT_ID,
-        "partner": PARTNER_CHAT_ID
+        "partner": PARTNER_CHAT_ID,
+        "test": TEST_CHAT_ID
     })
 
 if __name__ == "__main__":
