@@ -7,6 +7,7 @@ TOKEN = os.getenv("BOT_TOKEN", "").strip()
 OWNER_CHAT_ID = "7989818498"
 PARTNER_CHAT_ID = "7706282234"
 TEST_CHAT_ID = "8892559849"
+TEST_CHAT_ID = "8892559849"
 PASSWORD = "1386"
 IRAN_TZ = datetime.timezone(datetime.timedelta(hours=3, minutes=30))
 MEETING_DATE = datetime.datetime(2026, 3, 15, tzinfo=IRAN_TZ)
@@ -55,8 +56,8 @@ def send_file(cid, kind, file_id, caption=""):
         "chat_id": cid, field: file_id, "caption": caption
     })
 
-def menu():
-    return [
+def menu(cid=None):
+    buttons = [
         ["📸 عکس‌ها"],
         ["📅 روز آشنایی", "⏳ ساعت تا تولدت"],
         ["💬 چت دوطرفه"],
@@ -117,7 +118,7 @@ def forward_file(cid, kind, file_id, caption):
     if str(cid) == TEST_CHAT_ID:
         target = OWNER_CHAT_ID
     else:
-        target = PARTNER_CHAT_ID if str(cid) == OWNER_CHAT_ID else OWNER_CHAT_ID
+        target = TEST_CHAT_ID if str(cid) == OWNER_CHAT_ID else OWNER_CHAT_ID
     result = send_file(target, kind, file_id, caption)
     return result.get("ok", False)
 
@@ -134,7 +135,7 @@ def handle_message(cid, message):
             "chat_message": False,
             "file_mode": None
         }
-        return send(cid, "🌻❤️ به دنیای ahu goozlum خوش آمدی ❤️🌻", menu())
+        return send(cid, "🌻❤️ به دنیای ahu goozlum خوش آمدی ❤️🌻", menu(cid))
 
     if text == "🔙 بازگشت":
         sessions[cid] = {
@@ -143,7 +144,7 @@ def handle_message(cid, message):
             "chat_message": False,
             "file_mode": None
         }
-        return send(cid, "🏠 منوی اصلی", menu())
+        return send(cid, "🏠 منوی اصلی", menu(cid))
 
     if text == "📸 عکس‌ها":
         if not s["photos"]:
@@ -271,6 +272,7 @@ def health():
         "bot_token_configured": bool(TOKEN),
         "owner": OWNER_CHAT_ID,
         "partner": PARTNER_CHAT_ID,
+        "test": TEST_CHAT_ID,
         "test": TEST_CHAT_ID
     })
 
