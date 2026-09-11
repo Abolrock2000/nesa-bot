@@ -17,9 +17,17 @@ app = Flask(__name__)
 
 TOKEN = os.environ.get("BOT_TOKEN", "")
 
-YOUR_CHAT_ID = "1228473012"
+# ============================================================
+# 👑 مالک جدید ربات
+# ============================================================
+
+OWNER_CHAT_ID = "7989818498"
+
+# ============================================================
+# ❤️ پارتنر
+# ============================================================
+
 PARTNER_CHAT_ID = "7706282234"
-TEST_CHAT_ID = "7989818498"
 
 PASSWORD = "1386"
 
@@ -28,7 +36,10 @@ BIRTH_MONTH = 8
 BIRTH_HOUR = 0
 BIRTH_MINUTE = 0
 
-IRAN_OFFSET = datetime.timedelta(hours=3, minutes=30)
+IRAN_OFFSET = datetime.timedelta(
+    hours=3,
+    minutes=30
+)
 
 WEBSITE_URL = "https://nesa-bot.onrender.com"
 
@@ -38,6 +49,7 @@ WEBSITE_URL = "https://nesa-bot.onrender.com"
 # ============================================================
 
 user_access = {}
+
 PARTNER_ACTIVITY = {}
 
 BOT_ACTIVE = True
@@ -123,7 +135,11 @@ def log_partner_activity(
 
     chat_id = str(chat_id)
 
-    if chat_id == YOUR_CHAT_ID:
+    # ========================================================
+    # 👑 مالک هرگز به عنوان پارتنر گزارش نمی‌شود
+    # ========================================================
+
+    if chat_id == OWNER_CHAT_ID:
         return
 
     now = get_current_iran_time()
@@ -133,12 +149,17 @@ def log_partner_activity(
         PARTNER_ACTIVITY[chat_id] = {
 
             "first_seen": now,
+
             "last_seen": now,
+
             "count": 0,
 
             "first_name": first_name,
+
             "last_name": last_name,
+
             "username": username,
+
             "phone_number": phone_number,
 
             "last_action": action
@@ -159,10 +180,13 @@ def log_partner_activity(
         data["phone_number"] = phone_number
 
     data["last_seen"] = now
+
     data["last_action"] = action
+
     data["count"] += 1
 
     time_str = now.strftime("%H:%M:%S")
+
     date_str = now.strftime("%Y/%m/%d")
 
     weekdays = {
@@ -218,7 +242,7 @@ def log_partner_activity(
 """
 
     send_message(
-        YOUR_CHAT_ID,
+        OWNER_CHAT_ID,
         message
     )
 
@@ -238,7 +262,7 @@ def report_user_interaction(
 
     chat_id = str(chat_id)
 
-    if chat_id == YOUR_CHAT_ID:
+    if chat_id == OWNER_CHAT_ID:
         return
 
     log_partner_activity(
@@ -305,9 +329,13 @@ def hours_until_birthday():
     birth = datetime.datetime(
 
         now.year,
+
         BIRTH_MONTH,
+
         BIRTH_DAY,
+
         BIRTH_HOUR,
+
         BIRTH_MINUTE,
 
         tzinfo=datetime.timezone(IRAN_OFFSET)
@@ -318,9 +346,13 @@ def hours_until_birthday():
         birth = datetime.datetime(
 
             now.year + 1,
+
             BIRTH_MONTH,
+
             BIRTH_DAY,
+
             BIRTH_HOUR,
+
             BIRTH_MINUTE,
 
             tzinfo=datetime.timezone(IRAN_OFFSET)
@@ -345,12 +377,14 @@ def get_main_keyboard(chat_id=None):
 
         ["📅 روز آشنایی", "⏳ ساعت تا تولدت"],
 
-        ["💬 چت دوطرفه"],
-
-        ["🧪 چت تست"]
+        ["💬 چت دوطرفه"]
     ]
 
-    if str(chat_id) == YOUR_CHAT_ID:
+    # ========================================================
+    # 👑 منوی مخصوص مالک
+    # ========================================================
+
+    if str(chat_id) == OWNER_CHAT_ID:
 
         keyboard.append(
             ["📊 وضعیت پارتنر"]
@@ -424,29 +458,6 @@ def get_chat_keyboard():
             ["📤 ارسال عکس", "📤 ارسال فیلم"],
 
             ["📤 ارسال موزیک"],
-
-            ["🔙 بازگشت به منو"]
-        ],
-
-        "resize_keyboard": True
-    }
-
-
-# ============================================================
-# 🧪 منوی چت تست
-# ============================================================
-
-def get_test_chat_keyboard():
-
-    return {
-
-        "keyboard": [
-
-            ["📤 ارسال پیام به تست"],
-
-            ["📤 ارسال عکس به تست", "📤 ارسال فیلم به تست"],
-
-            ["📤 ارسال موزیک به تست"],
 
             ["🔙 بازگشت به منو"]
         ],
@@ -1357,7 +1368,7 @@ def handle_message(
 
     if (
         not BOT_ACTIVE
-        and chat_id != YOUR_CHAT_ID
+        and chat_id != OWNER_CHAT_ID
     ):
 
         send_message(
@@ -1395,177 +1406,6 @@ def handle_message(
     )
 
     user = user_access[chat_id]
-
-
-    # ========================================================
-    # 🧪 چت تست
-    # ========================================================
-
-    if text == "🧪 چت تست":
-
-        if chat_id == YOUR_CHAT_ID:
-
-            user["mode"] = "test_chat"
-
-            user[
-                "waiting_for_chat_message"
-            ] = False
-
-            user[
-                "waiting_for_file"
-            ] = False
-
-            send_message(
-
-                chat_id,
-
-                "🧪 چت تست با اکانت تست باز شد!\n\n"
-                "از دکمه‌های زیر استفاده کن.\n\n"
-                "📸 عکس\n"
-                "🎥 فیلم\n"
-                "🎵 موزیک / MP3\n"
-                "💬 پیام",
-
-                get_test_chat_keyboard()
-            )
-
-        else:
-
-            send_message(
-
-                chat_id,
-
-                "❌ این بخش فقط برای صاحب ربات است.",
-
-                get_main_keyboard(chat_id)
-            )
-
-        return
-
-
-    # ========================================================
-    # 📤 پیام به تست
-    # ========================================================
-
-    if text == "📤 ارسال پیام به تست":
-
-        if (
-            chat_id == YOUR_CHAT_ID
-            and user.get("mode") == "test_chat"
-        ):
-
-            user[
-                "waiting_for_chat_message"
-            ] = True
-
-            user[
-                "chat_target"
-            ] = "test"
-
-            send_message(
-
-                chat_id,
-
-                "💬 پیامت رو برای اکانت تست بنویس:",
-
-                get_test_chat_keyboard()
-            )
-
-        return
-
-
-    # ========================================================
-    # 📸 عکس به تست
-    # ========================================================
-
-    if text == "📤 ارسال عکس به تست":
-
-        if (
-            chat_id == YOUR_CHAT_ID
-            and user.get("mode") == "test_chat"
-        ):
-
-            user[
-                "waiting_for_file"
-            ] = "photo"
-
-            user[
-                "chat_target"
-            ] = "test"
-
-            send_message(
-
-                chat_id,
-
-                "📸 عکس رو همینجا بفرست:",
-
-                get_test_chat_keyboard()
-            )
-
-        return
-
-
-    # ========================================================
-    # 🎥 فیلم به تست
-    # ========================================================
-
-    if text == "📤 ارسال فیلم به تست":
-
-        if (
-            chat_id == YOUR_CHAT_ID
-            and user.get("mode") == "test_chat"
-        ):
-
-            user[
-                "waiting_for_file"
-            ] = "video"
-
-            user[
-                "chat_target"
-            ] = "test"
-
-            send_message(
-
-                chat_id,
-
-                "🎥 فیلم رو همینجا بفرست:",
-
-                get_test_chat_keyboard()
-            )
-
-        return
-
-
-    # ========================================================
-    # 🎵 موزیک به تست
-    # ========================================================
-
-    if text == "📤 ارسال موزیک به تست":
-
-        if (
-            chat_id == YOUR_CHAT_ID
-            and user.get("mode") == "test_chat"
-        ):
-
-            user[
-                "waiting_for_file"
-            ] = "audio"
-
-            user[
-                "chat_target"
-            ] = "test"
-
-            send_message(
-
-                chat_id,
-
-                "🎵 موزیک یا فایل MP3 رو همینجا بفرست:\n\n"
-                "میتونی از Attach → Music یا File استفاده کنی.",
-
-                get_test_chat_keyboard()
-            )
-
-        return
 
 
     # ========================================================
@@ -1640,7 +1480,6 @@ def handle_message(
 📅 روز آشنایی
 ⏳ شمارش معکوس تولد
 💬 چت دوطرفه
-🧪 چت تست
 
 🌻 هر دکمه یک تکه از داستان ماست...""",
 
@@ -1657,16 +1496,15 @@ def handle_message(
     if text == "💬 چت دوطرفه":
 
         if (
-            chat_id != YOUR_CHAT_ID
+            chat_id != OWNER_CHAT_ID
             and chat_id != PARTNER_CHAT_ID
-            and chat_id != TEST_CHAT_ID
         ):
 
             send_message(
 
                 chat_id,
 
-                "❌ این بخش فقط برای شما و پارتنر است.",
+                "❌ این بخش فقط برای مالک و پارتنر است.",
 
                 get_main_keyboard(chat_id)
             )
@@ -1872,25 +1710,22 @@ def handle_message(
 
         if target == "partner":
 
-            if chat_id == YOUR_CHAT_ID:
+            if chat_id == OWNER_CHAT_ID:
 
                 target_id = PARTNER_CHAT_ID
 
-            else:
+            elif chat_id == PARTNER_CHAT_ID:
 
-                target_id = YOUR_CHAT_ID
-
-
-        elif target == "test":
-
-            if chat_id == YOUR_CHAT_ID:
-
-                target_id = TEST_CHAT_ID
+                target_id = OWNER_CHAT_ID
 
             else:
 
-                target_id = YOUR_CHAT_ID
+                send_message(
+                    chat_id,
+                    "❌ شما اجازه استفاده از چت دوطرفه را ندارید."
+                )
 
+                return
 
         else:
 
@@ -1900,18 +1735,16 @@ def handle_message(
         # ====================================================
         # 🔐 محافظت
         #
-        # اگر فرستنده مالک باشد:
-        # مقصد پارتنر/تست → محافظت‌شده
+        # مالک → پارتنر = محافظت‌شده
         #
-        # اگر فرستنده پارتنر یا تست باشد:
-        # مقصد مالک → معمولی و قابل دانلود
+        # پارتنر → مالک = معمولی
         # ====================================================
 
         protect_for_recipient = (
 
-            chat_id == YOUR_CHAT_ID
+            chat_id == OWNER_CHAT_ID
             and
-            target_id != YOUR_CHAT_ID
+            target_id == PARTNER_CHAT_ID
         )
 
 
@@ -1971,16 +1804,9 @@ def handle_message(
             if protect_for_recipient:
 
                 success_text += (
-                    "\n\n🔐 نسخه‌ای که برای طرف مقابل ارسال شد "
+                    "\n\n🔐 نسخه‌ای که برای پارتنر ارسال شد "
                     "محافظت‌شده است."
                 )
-
-
-            keyboard = (
-                get_chat_keyboard()
-                if user.get("mode") == "partner_chat"
-                else get_test_chat_keyboard()
-            )
 
 
             send_message(
@@ -1989,7 +1815,7 @@ def handle_message(
 
                 success_text,
 
-                keyboard
+                get_chat_keyboard()
             )
 
         else:
@@ -2002,11 +1828,7 @@ def handle_message(
 
 اگر موزیک است، مطمئن شو فایل به‌صورت MP3 یا فایل صوتی ارسال شده باشد.""",
 
-                (
-                    get_chat_keyboard()
-                    if user.get("mode") == "partner_chat"
-                    else get_test_chat_keyboard()
-                )
+                get_chat_keyboard()
             )
 
 
@@ -2034,38 +1856,26 @@ def handle_message(
 
         if target == "partner":
 
-            if chat_id == YOUR_CHAT_ID:
+            if chat_id == OWNER_CHAT_ID:
 
                 target_id = PARTNER_CHAT_ID
+
+                sender_name = "عشقت"
+
+            elif chat_id == PARTNER_CHAT_ID:
+
+                target_id = OWNER_CHAT_ID
 
                 sender_name = "پارتنرت"
 
             else:
 
-                target_id = YOUR_CHAT_ID
+                send_message(
+                    chat_id,
+                    "❌ اجازه ارسال پیام نداری."
+                )
 
-                sender_name = "عشقت"
-
-
-        elif target == "test":
-
-            if chat_id == YOUR_CHAT_ID:
-
-                target_id = TEST_CHAT_ID
-
-                sender_name = "مالک"
-
-            else:
-
-                target_id = YOUR_CHAT_ID
-
-                sender_name = "اکانت تست"
-
-        else:
-
-            target_id = PARTNER_CHAT_ID
-
-            sender_name = "کاربر"
+                return
 
 
         if text:
@@ -2086,11 +1896,7 @@ def handle_message(
 
                     "✅ پیام ارسال شد! ❤️",
 
-                    (
-                        get_chat_keyboard()
-                        if user.get("mode") == "partner_chat"
-                        else get_test_chat_keyboard()
-                    )
+                    get_chat_keyboard()
                 )
 
             else:
@@ -2116,7 +1922,7 @@ def handle_message(
 
     if text == "📊 وضعیت پارتنر":
 
-        if chat_id != YOUR_CHAT_ID:
+        if chat_id != OWNER_CHAT_ID:
 
             send_message(
 
@@ -2537,13 +2343,17 @@ def birthday_timer():
                     )
 
 
+                    # 👑 مالک جدید
+
                     send_message(
 
-                        YOUR_CHAT_ID,
+                        OWNER_CHAT_ID,
 
                         BIRTHDAY_MESSAGE
                     )
 
+
+                    # ❤️ پارتنر
 
                     send_message(
 
@@ -2564,7 +2374,7 @@ def birthday_timer():
 
                         send_photo(
 
-                            YOUR_CHAT_ID,
+                            OWNER_CHAT_ID,
 
                             photo["path"],
 
@@ -3055,7 +2865,6 @@ def webhook():
                     from_user["id"]
                 )
 
-
                 first_name = from_user.get(
                     "first_name",
                     ""
@@ -3070,7 +2879,6 @@ def webhook():
                     "username",
                     ""
                 )
-
 
                 report_user_interaction(
 
@@ -3159,6 +2967,10 @@ def health():
 
         "service": "rose-bot",
 
+        "owner": OWNER_CHAT_ID,
+
+        "partner": PARTNER_CHAT_ID,
+
         "chat": "enabled",
 
         "audio": "enabled",
@@ -3184,6 +2996,14 @@ if __name__ == "__main__":
     )
 
     print(
+        f"👑 مالک جدید: {OWNER_CHAT_ID}"
+    )
+
+    print(
+        f"❤️ پارتنر: {PARTNER_CHAT_ID}"
+    )
+
+    print(
         f"🎂 تولد: {BIRTH_DAY}/{BIRTH_MONTH}"
     )
 
@@ -3193,14 +3013,6 @@ if __name__ == "__main__":
 
     print(
         "🩺 مسیر سلامت: /health"
-    )
-
-    print(
-        f"💬 پارتنر: {PARTNER_CHAT_ID}"
-    )
-
-    print(
-        f"🧪 تست: {TEST_CHAT_ID}"
     )
 
     print(
@@ -3232,11 +3044,7 @@ if __name__ == "__main__":
     )
 
     print(
-        "🔐 محافظت از رسانه برای پارتنر/تست فعال است!"
-    )
-
-    print(
-        "🧪 ارسال عکس/فیلم/موزیک به تست فعال است!"
+        "🔐 محافظت از رسانه برای پارتنر فعال است!"
     )
 
     print(
