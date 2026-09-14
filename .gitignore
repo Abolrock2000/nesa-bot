@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+*.db
+*.sqlite3
+app_backup.py
+app
+love-site/
+sunflower-love/
+static/
+templates/
+*.html
+script.js
+style.css
+start.sh
+file_00000000f1788210bc5e8d993e16a277.png
