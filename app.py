@@ -228,7 +228,8 @@ def get_main_keyboard(chat_id=None):
     keyboard = [
         ["📸 عکس‌ها"],
         ["📅 روز آشنایی", "⏳ ساعت تا تولدت"],
-        ["💬 چت دوطرفه"]
+        ["💬 چت دوطرفه"],
+        ["🌹 باغ عشق سه‌بعدی"]
     ]
 
     # 👑 منوی مخصوص مالک
@@ -961,6 +962,29 @@ def handle_message(chat_id, text, file_data=None):
 ⏳ فقط {hours:,} ساعت دیگه مونده...
 
 هر ساعتی که می‌گذره، من یک قدم به روزی نزدیک‌تر می‌شم که دنیا قشنگ‌تر شد؛ روزی که تو به دنیا اومدی. ❤️🌻"""
+        )
+        return
+
+
+    # 🌹 باغ عشق سه بعدی
+    if text == "🌹 باغ عشق سه‌بعدی":
+        garden_keyboard = {
+            "inline_keyboard": [
+                [
+                    {
+                        "text": "🌹 ورود به باغ عشق",
+                        "web_app": {
+                            "url": WEBSITE_URL + "/garden"
+                        }
+                    }
+                ]
+            ]
+        }
+
+        send_message(
+            chat_id,
+            "🌹 باغ عشق سه بعدی باز شد ❤️\n\nبرای ورود دکمه زیر را لمس کن:",
+            garden_keyboard
         )
         return
 
