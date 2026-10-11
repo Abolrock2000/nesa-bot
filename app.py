@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 import requests
 import json
 import random
@@ -8,6 +8,8 @@ import threading
 import time
 
 app = Flask(__name__)
+
+# 🌹 باغ سه بعدی
 
 # ============================================================
 # 🔐 تنظیمات ربات
@@ -215,7 +217,8 @@ def get_main_keyboard(chat_id=None):
     keyboard = [
         ["📸 عکس‌ها"],
         ["📅 روز آشنایی", "⏳ ساعت تا تولدت"],
-        ["💬 چت دوطرفه"]
+        ["💬 چت دوطرفه"],
+        ["🌹 باغ عشق سه‌بعدی"]
     ]
 
     # 👑 منوی مخصوص مالک
@@ -951,6 +954,16 @@ def handle_message(chat_id, text, file_data=None):
         )
         return
 
+
+    # 🌹 باغ عشق سه بعدی
+    if text == "🌹 باغ عشق سه‌بعدی":
+        send_message(
+            chat_id,
+            "🌹 باغ عشق سه بعدی باز شد ❤️\n\nبرای ورود به باغ لمس کن:",
+            get_main_keyboard(chat_id)
+        )
+        return
+
     # ❌ دستور ناشناخته
     send_message(
         chat_id,
@@ -1009,6 +1022,19 @@ def birthday_timer():
             print("birthday_timer error:", e)
 
         time.sleep(30)
+
+
+
+# ============================================================
+# 🌹 باغ عشق سه بعدی Web App
+# ============================================================
+@app.route("/garden", methods=["GET"])
+def garden_webapp():
+    return send_from_directory("webapp", "index.html")
+
+@app.route("/garden/<path:path>", methods=["GET"])
+def garden_files(path):
+    return send_from_directory("webapp", path)
 
 # ============================================================
 # 🌐 Webhook
