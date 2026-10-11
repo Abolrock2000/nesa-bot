@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify
 import requests
 import json
 import random
@@ -8,19 +8,6 @@ import threading
 import time
 
 app = Flask(__name__)
-
-# ============================================================
-# 🌹 باغ عشق سه بعدی - Telegram Web App
-# ============================================================
-@app.route("/garden")
-def garden_home():
-    return send_from_directory("webapp", "index.html")
-
-@app.route("/garden/<path:path>")
-def garden_files(path):
-    return send_from_directory("webapp", path)
-
-
 
 # ============================================================
 # 🔐 تنظیمات ربات
@@ -228,8 +215,7 @@ def get_main_keyboard(chat_id=None):
     keyboard = [
         ["📸 عکس‌ها"],
         ["📅 روز آشنایی", "⏳ ساعت تا تولدت"],
-        ["💬 چت دوطرفه"],
-        ["🌹 باغ عشق سه‌بعدی"]
+        ["💬 چت دوطرفه"]
     ]
 
     # 👑 منوی مخصوص مالک
@@ -962,29 +948,6 @@ def handle_message(chat_id, text, file_data=None):
 ⏳ فقط {hours:,} ساعت دیگه مونده...
 
 هر ساعتی که می‌گذره، من یک قدم به روزی نزدیک‌تر می‌شم که دنیا قشنگ‌تر شد؛ روزی که تو به دنیا اومدی. ❤️🌻"""
-        )
-        return
-
-
-    # 🌹 باغ عشق سه بعدی
-    if text == "🌹 باغ عشق سه‌بعدی":
-        garden_keyboard = {
-            "inline_keyboard": [
-                [
-                    {
-                        "text": "🌹 ورود به باغ عشق",
-                        "web_app": {
-                            "url": WEBSITE_URL + "/garden"
-                        }
-                    }
-                ]
-            ]
-        }
-
-        send_message(
-            chat_id,
-            "🌹 باغ عشق سه بعدی باز شد ❤️\n\nبرای ورود دکمه زیر را لمس کن:",
-            garden_keyboard
         )
         return
 
