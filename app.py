@@ -1,3 +1,4 @@
+# نسخه امن اولیه: محافظت محتوا به صورت پیش فرض فعال شده است.
 from flask import Flask, request, jsonify
 import requests
 import json
@@ -269,7 +270,7 @@ def get_chat_keyboard():
 # ============================================================
 # 📤 ارسال پیام تلگرام
 # ============================================================
-def send_message(chat_id, text, reply_markup=None, protect_content=False):
+def send_message(chat_id, text, reply_markup=None, protect_content=True):
     if not TOKEN:
         print("❌ BOT_TOKEN تنظیم نشده است.")
         return False
@@ -297,7 +298,7 @@ def send_message(chat_id, text, reply_markup=None, protect_content=False):
 # ============================================================
 # 📸 ارسال عکس
 # ============================================================
-def send_photo(chat_id, photo_data, caption="", protect_content=False):
+def send_photo(chat_id, photo_data, caption="", protect_content=True):
     if not TOKEN:
         print("❌ BOT_TOKEN تنظیم نشده است.")
         return False
@@ -348,7 +349,7 @@ def send_photo(chat_id, photo_data, caption="", protect_content=False):
 # ============================================================
 # 🎥 ارسال فیلم
 # ============================================================
-def send_video(chat_id, video_data, caption="", protect_content=False):
+def send_video(chat_id, video_data, caption="", protect_content=True):
     if not TOKEN:
         print("❌ BOT_TOKEN تنظیم نشده است.")
         return False
@@ -396,7 +397,7 @@ def send_video(chat_id, video_data, caption="", protect_content=False):
 # ============================================================
 # 🎵 ارسال موزیک
 # ============================================================
-def send_audio(chat_id, audio_data, caption="", title="", performer="", protect_content=False):
+def send_audio(chat_id, audio_data, caption="", title="", performer="", protect_content=True):
     if not TOKEN:
         print("❌ BOT_TOKEN تنظیم نشده است.")
         return False
@@ -456,7 +457,7 @@ def send_audio(chat_id, audio_data, caption="", title="", performer="", protect_
 # ============================================================
 # 📎 ارسال Document
 # ============================================================
-def send_document(chat_id, document_data, caption="", protect_content=False):
+def send_document(chat_id, document_data, caption="", protect_content=True):
     if not TOKEN:
         print("❌ BOT_TOKEN تنظیم نشده است.")
         return False
@@ -504,7 +505,7 @@ def send_document(chat_id, document_data, caption="", protect_content=False):
 # ============================================================
 # 🎤 ارسال Voice
 # ============================================================
-def send_voice(chat_id, voice_data, caption="", protect_content=False):
+def send_voice(chat_id, voice_data, caption="", protect_content=True):
     if not TOKEN:
         print("❌ BOT_TOKEN تنظیم نشده است.")
         return False
@@ -541,7 +542,7 @@ def send_voice(chat_id, voice_data, caption="", protect_content=False):
 # ============================================================
 # 🎵 ارسال موزیک با file_id
 # ============================================================
-def send_audio_file_id(chat_id, file_id, caption="", title="🎵", performer="❤️", protect_content=False):
+def send_audio_file_id(chat_id, file_id, caption="", title="🎵", performer="❤️", protect_content=True):
     return send_audio(
         chat_id,
         f"file_id:{file_id}",
@@ -554,7 +555,7 @@ def send_audio_file_id(chat_id, file_id, caption="", title="🎵", performer="�
 # ============================================================
 # 📤 ارسال فایل در چت
 # ============================================================
-def send_chat_file(target_id, file_data, protect_content=False):
+def send_chat_file(target_id, file_data, protect_content=True):
     file_type = file_data.get("type")
     file_id = file_data.get("file_id")
     caption = file_data.get("caption", "")
