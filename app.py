@@ -40,12 +40,6 @@ user_access = {}
 PARTNER_ACTIVITY = {}
 BOT_ACTIVE = True
 
-# ❤️ وضعیت روزانه و سورپرایز
-MOOD_WAIT = {}
-SURPRISES = []
-CALM_MODE = {}
-MOOD_OPTIONS = ["😊 خوبم", "😐 معمولی", "😔 خوب نیستم", "❤️ دلم برات تنگ شده"]
-
 # 🔐 سیستم تایید ورود کاربران
 AUTHORIZED_USERS = {OWNER_CHAT_ID, PARTNER_CHAT_ID}
 PENDING_USERS = {}
@@ -226,9 +220,6 @@ def hours_until_birthday():
 # ============================================================
 def get_main_keyboard(chat_id=None):
     keyboard = [
-        ["❤️ حال امروز من"],
-        ["🎁 سورپرایز"],
-        ["🫶 نیاز به آرامش دارم"],
         ["📸 عکس‌ها"],
         ["📅 روز آشنایی", "⏳ ساعت تا تولدت"],
         ["💬 چت دوطرفه"]
@@ -693,31 +684,6 @@ def handle_message(chat_id, text, file_data=None):
 🌻 هر دکمه یک تکه از داستان ماست...""",
             get_main_keyboard(chat_id)
         )
-        return
-
-    # ❤️ حال امروز من
-    if text == "❤️ حال امروز من":
-        MOOD_WAIT[chat_id] = True
-        send_message(chat_id, "❤️ حال امروزت چطوره؟\n\n" + "\n".join(MOOD_OPTIONS) + "\n\n✍️ هر چیز دیگری خواستی بنویس.")
-        return
-
-    if MOOD_WAIT.get(chat_id):
-        MOOD_WAIT[chat_id] = False
-        target_id = PARTNER_CHAT_ID if chat_id == OWNER_CHAT_ID else OWNER_CHAT_ID
-        send_message(target_id, f"❤️ حال امروز طرف مقابلت:\n\n{text}")
-        send_message(chat_id, "✅ حالت برای طرف مقابل ارسال شد.")
-        return
-
-    # 🫶 حالت آرامش
-    if text == "🫶 نیاز به آرامش دارم":
-        target_id = PARTNER_CHAT_ID if chat_id == OWNER_CHAT_ID else OWNER_CHAT_ID
-        send_message(target_id, "🫶 طرف مقابلت الان نیاز به آرامش دارد. ❤️")
-        send_message(chat_id, "❤️ پیام آرامش ارسال شد.")
-        return
-
-    # 🎁 سورپرایز
-    if text == "🎁 سورپرایز":
-        send_message(chat_id, "🎁 بخش سورپرایز آماده است.\nبرای ارسال، متن یا فایل را بفرست.")
         return
 
     # 💬 چت دوطرفه
@@ -1269,20 +1235,6 @@ def health():
 # ============================================================
 # 🚀 اجرای برنامه
 # ============================================================
-def morning_mood_sender():
-    sent = None
-    while True:
-        try:
-            now = get_current_iran_time()
-            key = now.strftime("%Y-%m-%d")
-            if now.hour == 8 and sent != key:
-                for uid in [OWNER_CHAT_ID, PARTNER_CHAT_ID]:
-                    send_message(uid, "🌅 صبح بخیر ❤️\nحال امروزت چطوره؟\nروی دکمه ❤️ حال امروز من بزن.")
-                sent = key
-        except Exception as e:
-            print("morning_mood_sender error", e)
-        time.sleep(30)
-
 if __name__ == "__main__":
     print("🚀 ربات ahu goozlum روشن شد...")
     print(f"👑 مالک جدید: {OWNER_CHAT_ID}")
@@ -1302,9 +1254,6 @@ if __name__ == "__main__":
 
     timer_thread = threading.Thread(target=birthday_timer, daemon=True)
     timer_thread.start()
-
-    mood_thread = threading.Thread(target=morning_mood_sender, daemon=True)
-    mood_thread.start()
 
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port, debug=False)
