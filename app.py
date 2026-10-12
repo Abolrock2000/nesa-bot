@@ -40,6 +40,12 @@ user_access = {}
 PARTNER_ACTIVITY = {}
 BOT_ACTIVE = True
 
+# 🔐 سیستم تایید ورود کاربران
+AUTHORIZED_USERS = {OWNER_CHAT_ID, PARTNER_CHAT_ID}
+PENDING_USERS = {}
+LOGIN_PASSWORDS = {}
+
+
 # ============================================================
 # 📸 عکس‌های گالری
 # ============================================================
@@ -585,9 +591,40 @@ def send_chat_file(target_id, file_data, protect_content=True):
 # ============================================================
 # 🤖 پردازش پیام
 # ============================================================
+def request_access(user_id, first_name="", username=""):
+    user_id = str(user_id)
+    if user_id in AUTHORIZED_USERS:
+        return
+    PENDING_USERS[user_id] = {"first_name": first_name, "username": username}
+    keyboard = {"inline_keyboard": [[
+        {"text": "✅ تایید", "callback_data": "approve_" + user_id},
+        {"text": "❌ رد", "callback_data": "reject_" + user_id}
+    ]]}
+    send_message(OWNER_CHAT_ID, f"🚨 درخواست ورود جدید\n\n👤 نام: {first_name}\n🆔 آیدی: {user_id}\n👤 یوزرنیم: @{username if username else 'ندارد'}\n\nبعد از تایید، رمز ورود را برای همین کاربر ارسال کن.", keyboard)
+
+def generate_login_password(user_id):
+    pwd = str(random.randint(100000, 999999))
+    LOGIN_PASSWORDS[str(user_id)] = pwd
+    return pwd
+
 def handle_message(chat_id, text, file_data=None):
     chat_id = str(chat_id)
     text = (text or "").strip()
+
+    # 🔐 جلوگیری از ورود افراد تایید نشده
+    if chat_id not in AUTHORIZED_USERS:
+        user = user_access.setdefault(chat_id, {"login_ok": False})
+        if text == "/start":
+            request_access(chat_id)
+            send_message(chat_id, "⏳ درخواست ورود شما برای صاحب ربات ارسال شد. پس از تایید، رمز ورود دریافت می‌کنید.")
+            return
+        if not user.get("login_ok", False):
+            if LOGIN_PASSWORDS.get(chat_id) and text == LOGIN_PASSWORDS[chat_id]:
+                user["login_ok"] = True
+                send_message(chat_id, "✅ رمز صحیح است. ورود شما تایید شد.", get_main_keyboard(chat_id))
+            else:
+                send_message(chat_id, "🔒 ابتدا باید توسط صاحب ربات تایید شوید.")
+            return
 
     # 🚫 ربات غیرفعال
     if not BOT_ACTIVE and chat_id != OWNER_CHAT_ID:
@@ -1142,15 +1179,21 @@ def webhook():
                 callback = data["callback_query"]
                 from_user = callback["from"]
                 chat_id = str(from_user["id"])
-                first_name = from_user.get("first_name", "")
-                last_name = from_user.get("last_name", "")
-                username = from_user.get("username", "")
+                callback_data = callback.get("data", "")
 
-                report_user_interaction(
-                    chat_id,
-                    "🖱️ کاربر روی Inline Button کلیک کرد",
-                    first_name, last_name, username, ""
-                )
+                if chat_id == OWNER_CHAT_ID:
+                    if callback_data.startswith("approve_"):
+                        uid = callback_data.replace("approve_", "", 1)
+                        AUTHORIZED_USERS.add(uid)
+                        pwd = generate_login_password(uid)
+                        send_message(uid, "✅ درخواست ورود شما تایید شد.\n\n🔑 رمز ورود شما: " + pwd)
+                        send_message(OWNER_CHAT_ID, "✅ کاربر تایید شد و رمز ارسال شد.")
+                    elif callback_data.startswith("reject_"):
+                        uid = callback_data.replace("reject_", "", 1)
+                        PENDING_USERS.pop(uid, None)
+                        send_message(uid, "❌ درخواست ورود شما رد شد.")
+                        send_message(OWNER_CHAT_ID, "❌ کاربر رد شد.")
+
 
             elif "edited_message" in data:
                 edited = data["edited_message"]
