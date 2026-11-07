@@ -140,6 +140,25 @@ DEER_GALLERY = [
     ("https://i.postimg.cc/ZKHxfYBS/IMG-20261014-185729-001.jpg", "🦌 عکس شماره ۸ | آهوی دوست‌داشتنی من ❤️"),
 ]
 
+def deer_gallery_keyboard():
+    """One separate button per photo; numbers appear on buttons, not captions."""
+    rows = []
+    for index in range(0, len(DEER_GALLERY), 2):
+        row = []
+        for photo_index in range(index, min(index + 2, len(DEER_GALLERY))):
+            row.append({
+                "text": f"🦌 عکس شماره {photo_index + 1}",
+                "callback_data": f"deer_photo_{photo_index + 1}"
+            })
+        rows.append(row)
+    rows.append([{"text": "🔙 بازگشت به منو", "callback_data": "deer_gallery_close"}])
+    return {"inline_keyboard": rows}
+
+def show_deer_gallery_menu(chat_id):
+    send_message(chat_id,
+        "🦌 آهوی من ❤️\nبرای دیدن هر عکس، دکمه شماره همان عکس را بزن:",
+        deer_gallery_keyboard(), protect_content=False)
+
 def iran_now():
     return datetime.datetime.now(datetime.timezone.utc).astimezone(IRAN_TZ)
 
@@ -406,18 +425,15 @@ def handle_message(chat_id, text, file_data=None):
         user["waiting_for_deer_password"] = False
         if text == PASSWORD:
             user["deer_gallery_access"] = True
-            send_message(chat_id, "✅ رمز درست است! گالری 🦌 آهوی من باز شد.\n۸ عکس شماره‌گذاری‌شده را ببین ❤️")
-            for photo_url, caption in DEER_GALLERY:
-                send_photo(chat_id, photo_url, caption, protect_content=False)
+            send_message(chat_id, "✅ رمز درست است! گالری 🦌 آهوی من باز شد ❤️")
+            show_deer_gallery_menu(chat_id)
         else:
             send_message(chat_id, "❌ رمز اشتباه است. برای ورود به گالری، رمز ۱۳۸۶ را وارد کن.", get_main_keyboard(chat_id))
         return
 
     if text == "🦌 آهوی من":
         if user.get("deer_gallery_access"):
-            send_message(chat_id, "🦌 گالری آهوی من ❤️\n۸ عکس شماره‌گذاری‌شده تقدیم به تو:")
-            for photo_url, caption in DEER_GALLERY:
-                send_photo(chat_id, photo_url, caption, protect_content=False)
+            show_deer_gallery_menu(chat_id)
         else:
             user["waiting_for_deer_password"] = True
             send_message(chat_id, "🔐 برای دیدن گالری خصوصی «🦌 آهوی من» رمز را وارد کن:", get_password_keyboard())
@@ -648,6 +664,37 @@ def webhook():
             chat_id = str(from_user.get("id", ""))
             cb = callback.get("data", "")
             log.info("CALLBACK IN: chat=%s data=%s", chat_id, cb)
+            if cb.startswith("deer_photo_"):
+                user_state = user_access.get(chat_id, {})
+                try:
+                    photo_number = int(cb.rsplit("_", 1)[1])
+                except (ValueError, IndexError):
+                    photo_number = 0
+                if not user_state.get("deer_gallery_access"):
+                    api_call("answerCallbackQuery", data={
+                        "callback_query_id": callback.get("id", ""),
+                        "text": "ابتدا رمز گالری را وارد کن.", "show_alert": True
+                    })
+                    return "OK", 200
+                if 1 <= photo_number <= len(DEER_GALLERY):
+                    photo_url, _old_caption = DEER_GALLERY[photo_number - 1]
+                    api_call("answerCallbackQuery", data={"callback_query_id": callback.get("id", "")})
+                    send_photo(chat_id, photo_url, f"🦌 آهوی من ❤️", protect_content=False)
+                else:
+                    api_call("answerCallbackQuery", data={
+                        "callback_query_id": callback.get("id", ""), "text": "شماره عکس معتبر نیست."
+                    })
+                return "OK", 200
+            elif cb == "deer_gallery_close":
+                api_call("answerCallbackQuery", data={"callback_query_id": callback.get("id", "")})
+                msg = callback.get("message", {})
+                if msg.get("message_id"):
+                    api_call("editMessageText", data={
+                        "chat_id": chat_id,
+                        "message_id": msg["message_id"],
+                        "text": "گالری آهوی من بسته شد. برای باز کردن دوباره از منوی اصلی استفاده کن."
+                    })
+                return "OK", 200
             if chat_id == OWNER_CHAT_ID:
                 if cb.startswith("upd_toggle_"):
                     uid = cb[len("upd_toggle_"):]
