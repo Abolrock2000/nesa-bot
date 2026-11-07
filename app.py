@@ -9,6 +9,7 @@ import os
 import threading
 import time
 import logging
+import sqlite3
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -31,6 +32,91 @@ PENDING_USERS = {}
 LOGIN_PASSWORDS = {}
 BOT_ACTIVE = True
 
+# Persistent user directory for the owner-only update announcement feature.
+DATA_DIR = os.environ.get("DATA_DIR", ".").strip() or "."
+os.makedirs(DATA_DIR, exist_ok=True)
+USER_DB_PATH = os.path.join(DATA_DIR, "bot_users.sqlite3")
+BROADCAST_SELECTIONS = {}
+BROADCAST_TEXT = (
+    "📢 اطلاعیه رسمی ربات\n\n"
+    "کاربر گرامی، ربات بروزرسانی شد و بخش‌های جدیدی به آن اضافه شده است.\n"
+    "برای مشاهده امکانات جدید، ربات را باز کنید و از منوی اصلی استفاده کنید.\n\n"
+    "با تشکر از همراهی شما ❤️"
+)
+
+def init_user_db():
+    with sqlite3.connect(USER_DB_PATH) as conn:
+        conn.execute("""CREATE TABLE IF NOT EXISTS bot_users (
+            chat_id TEXT PRIMARY KEY,
+            first_name TEXT DEFAULT '',
+            last_name TEXT DEFAULT '',
+            username TEXT DEFAULT '',
+            first_seen TEXT NOT NULL,
+            last_seen TEXT NOT NULL
+        )""")
+        conn.commit()
+
+def remember_user(chat_id, first_name="", last_name="", username=""):
+    chat_id = str(chat_id)
+    if not chat_id or chat_id == OWNER_CHAT_ID:
+        return
+    now = iran_now().isoformat()
+    with sqlite3.connect(USER_DB_PATH) as conn:
+        conn.execute("""INSERT INTO bot_users
+            (chat_id, first_name, last_name, username, first_seen, last_seen)
+            VALUES (?, ?, ?, ?, ?, ?)
+            ON CONFLICT(chat_id) DO UPDATE SET
+              first_name=CASE WHEN excluded.first_name!='' THEN excluded.first_name ELSE bot_users.first_name END,
+              last_name=CASE WHEN excluded.last_name!='' THEN excluded.last_name ELSE bot_users.last_name END,
+              username=CASE WHEN excluded.username!='' THEN excluded.username ELSE bot_users.username END,
+              last_seen=excluded.last_seen""",
+            (chat_id, first_name or "", last_name or "", username or "", now, now))
+        conn.commit()
+
+def list_known_users():
+    with sqlite3.connect(USER_DB_PATH) as conn:
+        rows = conn.execute("SELECT chat_id, first_name, last_name, username FROM bot_users ORDER BY first_name COLLATE NOCASE").fetchall()
+    return rows
+
+def broadcast_picker_keyboard(owner_id):
+    selected = BROADCAST_SELECTIONS.setdefault(str(owner_id), set())
+    rows = []
+    users = list_known_users()
+    for uid, first, last, username in users:
+        label = (first + " " + last).strip() or ("@" + username if username else "کاربر " + uid)
+        if len(label) > 35:
+            label = label[:32] + "..."
+        mark = "☑️ " if uid in selected else "⬜️ "
+        rows.append([{"text": mark + label, "callback_data": "upd_toggle_" + uid}])
+    rows.append([{"text": "📨 ارسال پیام به انتخاب‌شده‌ها", "callback_data": "upd_send"}])
+    rows.append([{"text": "❌ لغو", "callback_data": "upd_cancel"}])
+    return {"inline_keyboard": rows}, len(users)
+
+def show_broadcast_picker(owner_id):
+    BROADCAST_SELECTIONS[str(owner_id)] = set()
+    keyboard, total = broadcast_picker_keyboard(owner_id)
+    if total == 0:
+        send_message(owner_id, "هنوز هیچ کاربری در فهرست ثبت‌شده ربات وجود ندارد.")
+        return
+    note = "\nفرد یا افراد موردنظر را انتخاب کن و سپس دکمه ارسال را بزن."
+    send_message(owner_id, f"📢 انتخاب گیرندگان پیام بروزرسانی\n👥 تعداد کاربران ثبت‌شده: {total}" + note, keyboard)
+
+def send_broadcast_to_selected(owner_id):
+    selected = BROADCAST_SELECTIONS.get(str(owner_id), set())
+    if not selected:
+        send_message(owner_id, "ابتدا حداقل یک کاربر را انتخاب کن.")
+        return
+    success, failed = 0, 0
+    for uid in list(selected):
+        if send_message(uid, BROADCAST_TEXT, protect_content=False):
+            success += 1
+        else:
+            failed += 1
+    BROADCAST_SELECTIONS.pop(str(owner_id), None)
+    send_message(owner_id, f"📊 نتیجه ارسال پیام بروزرسانی\n✅ موفق: {success}\n❌ ناموفق: {failed}")
+
+init_user_db()
+
 PHOTOS = {
     "📸 عکس ۱": {"path": "photos/IMG_20260801_224828_501.jpg", "caption": "🌹 عشق زندگیم... ❤️"},
     "📸 عکس ۲": {"path": "photos/null_14041109_222510829.jpg", "caption": "💫 قلب من... تو هستی"},
@@ -41,6 +127,18 @@ PHOTOS = {
     "📸 عکس ۷": {"path": "https://i.postimg.cc/5tDhyRgM/IMG-20260318-184739-714.jpg", "caption": "💖 عکس مخصوص... ❤️"},
     "📸 عکس جدید": {"path": "photos/file_00000000f1788210bc5e8d993e16a277.png", "caption": "🌹 این عکس مخصوص توست... ❤️"},
 }
+
+
+DEER_GALLERY = [
+    ("https://i.postimg.cc/ZK4LFvRb/IMG-20261009-142818-837.jpg", "🦌 آهوی من... ❤️"),
+    ("https://i.postimg.cc/gkmKqLJG/IMG-20261014-185713-111.jpg", "🌹 زیبای من..."),
+    ("https://i.postimg.cc/wTgkcRvx/IMG-20261014-185714-929.jpg", "❤️ قشنگ‌ترین قاب من"),
+    ("https://i.postimg.cc/SNkG7Ysy/IMG-20261014-185716-547.jpg", "✨ ماه من"),
+    ("https://i.postimg.cc/L6D3y4YK/IMG-20261014-185718-400.jpg", "🌸 عزیز دلم"),
+    ("https://i.postimg.cc/CL7svMBp/IMG-20261014-185728-651.jpg", "💖 تمام زیبایی من"),
+    ("https://i.postimg.cc/nc2GdVjt/IMG-20261014-185728-937.jpg", "🌷 جانِ دلم"),
+    ("https://i.postimg.cc/ZKHxfYBS/IMG-20261014-185729-001.jpg", "🦌 آهوی دوست‌داشتنی من ❤️"),
+]
 
 def iran_now():
     return datetime.datetime.now(datetime.timezone.utc).astimezone(IRAN_TZ)
@@ -127,9 +225,10 @@ def send_voice(chat_id, voice, caption="", protect_content=True):
                       protect_content, timeout=150)
 
 def get_main_keyboard(chat_id=None):
-    rows = [["📸 عکس‌ها"], ["📅 روز آشنایی", "⏳ ساعت تا تولدت"], ["💬 چت دوطرفه"]]
+    rows = [["📸 عکس‌ها"], ["🦌 آهوی من"], ["📅 روز آشنایی", "⏳ ساعت تا تولدت"], ["💬 چت دوطرفه"]]
     if str(chat_id) == OWNER_CHAT_ID:
         rows.append(["📊 وضعیت پارتنر"])
+        rows.append(["📢 ارسال پیام بروزرسانی"])
     rows.append(["🔙 بازگشت به منو"])
     return {"keyboard": rows, "resize_keyboard": True}
 
@@ -292,6 +391,19 @@ def handle_message(chat_id, text, file_data=None):
             "🌻❤️ به دنیای ahu goozlum خوش اومدی ❤️🌻\n\n"
             "📸 عکس‌های خصوصی\n📅 روز آشنایی\n⏳ شمارش معکوس تولد\n💬 چت دوطرفه",
             get_main_keyboard(chat_id)); return
+
+    if text == "📢 ارسال پیام بروزرسانی":
+        if chat_id != OWNER_CHAT_ID:
+            send_message(chat_id, "❌ دسترسی ندارید.")
+        else:
+            show_broadcast_picker(chat_id)
+        return
+
+    if text == "🦌 آهوی من":
+        send_message(chat_id, "🦌 گالری آهوی من ❤️\nاین قاب‌های قشنگ تقدیم به تو:")
+        for photo_url, caption in DEER_GALLERY:
+            send_photo(chat_id, photo_url, caption, protect_content=False)
+        return
 
     if text == "💬 چت دوطرفه":
         if chat_id not in (OWNER_CHAT_ID, PARTNER_CHAT_ID):
@@ -483,6 +595,8 @@ def webhook():
                 return "OK", 200
             text = message.get("text", "")
             file_data = extract_file(message)
+            remember_user(chat_id, chat.get("first_name", ""),
+                          chat.get("last_name", ""), chat.get("username", ""))
             log.info("WEBHOOK IN: chat=%s text=%r file=%s update_id=%s",
                      chat_id, text[:100], (file_data or {}).get("type"), data.get("update_id"))
 
@@ -517,7 +631,42 @@ def webhook():
             cb = callback.get("data", "")
             log.info("CALLBACK IN: chat=%s data=%s", chat_id, cb)
             if chat_id == OWNER_CHAT_ID:
-                if cb.startswith("approve_"):
+                if cb.startswith("upd_toggle_"):
+                    uid = cb[len("upd_toggle_"):]
+                    selected = BROADCAST_SELECTIONS.setdefault(OWNER_CHAT_ID, set())
+                    if uid in selected:
+                        selected.remove(uid)
+                    else:
+                        selected.add(uid)
+                    keyboard, total = broadcast_picker_keyboard(OWNER_CHAT_ID)
+                    msg = callback.get("message", {})
+                    if msg.get("message_id"):
+                        api_call("editMessageReplyMarkup", data={
+                            "chat_id": OWNER_CHAT_ID,
+                            "message_id": msg["message_id"],
+                            "reply_markup": json.dumps(keyboard, ensure_ascii=False)
+                        })
+                    api_call("answerCallbackQuery", data={
+                        "callback_query_id": callback.get("id", ""),
+                        "text": "انتخاب بروزرسانی شد"
+                    })
+                    return "OK", 200
+                elif cb == "upd_send":
+                    api_call("answerCallbackQuery", data={"callback_query_id": callback.get("id", "")})
+                    send_broadcast_to_selected(OWNER_CHAT_ID)
+                    return "OK", 200
+                elif cb == "upd_cancel":
+                    BROADCAST_SELECTIONS.pop(OWNER_CHAT_ID, None)
+                    api_call("answerCallbackQuery", data={"callback_query_id": callback.get("id", ""), "text": "لغو شد"})
+                    msg = callback.get("message", {})
+                    if msg.get("message_id"):
+                        api_call("editMessageText", data={
+                            "chat_id": OWNER_CHAT_ID,
+                            "message_id": msg["message_id"],
+                            "text": "❌ ارسال پیام بروزرسانی لغو شد."
+                        })
+                    return "OK", 200
+                elif cb.startswith("approve_"):
                     uid = cb.split("_", 1)[1]
                     AUTHORIZED_USERS.add(uid)
                     pwd = generate_login_password(uid)
