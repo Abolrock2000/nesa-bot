@@ -130,33 +130,29 @@ PHOTOS = {
 
 
 DEER_GALLERY = [
-    ("https://i.postimg.cc/ZK4LFvRb/IMG-20261009-142818-837.jpg", "🦌 عکس شماره ۱ | آهوی من... ❤️"),
-    ("https://i.postimg.cc/gkmKqLJG/IMG-20261014-185713-111.jpg", "🌹 عکس شماره ۲ | زیبای من..."),
-    ("https://i.postimg.cc/wTgkcRvx/IMG-20261014-185714-929.jpg", "❤️ عکس شماره ۳ | قشنگ‌ترین قاب من"),
-    ("https://i.postimg.cc/SNkG7Ysy/IMG-20261014-185716-547.jpg", "✨ عکس شماره ۴ | ماه من"),
-    ("https://i.postimg.cc/L6D3y4YK/IMG-20261014-185718-400.jpg", "🌸 عکس شماره ۵ | عزیز دلم"),
-    ("https://i.postimg.cc/CL7svMBp/IMG-20261014-185728-651.jpg", "💖 عکس شماره ۶ | تمام زیبایی من"),
-    ("https://i.postimg.cc/nc2GdVjt/IMG-20261014-185728-937.jpg", "🌷 عکس شماره ۷ | جانِ دلم"),
-    ("https://i.postimg.cc/ZKHxfYBS/IMG-20261014-185729-001.jpg", "🦌 عکس شماره ۸ | آهوی دوست‌داشتنی من ❤️"),
+    ("https://i.postimg.cc/ZK4LFvRb/IMG-20261009-142818-837.jpg", "🦌 آهوی من... تو قشنگ‌ترین اتفاق دنیای منی ❤️"),
+    ("https://i.postimg.cc/gkmKqLJG/IMG-20261014-185713-111.jpg", "🌹 زیبای من... هر بار نگاهت می‌کنم، بیشتر عاشقت می‌شوم."),
+    ("https://i.postimg.cc/wTgkcRvx/IMG-20261014-185714-929.jpg", "❤️ قشنگ‌ترین قاب زندگی من، همیشه تصویر توست."),
+    ("https://i.postimg.cc/SNkG7Ysy/IMG-20261014-185716-547.jpg", "✨ ماه من... لبخندت روشنایی روزهای من است."),
+    ("https://i.postimg.cc/L6D3y4YK/IMG-20261014-185718-400.jpg", "🌸 عزیز دلم... بودنت برای من از هر چیزی باارزش‌تر است."),
+    ("https://i.postimg.cc/CL7svMBp/IMG-20261014-185728-651.jpg", "💖 تمام زیبایی من در نگاه و لبخند تو خلاصه می‌شود."),
+    ("https://i.postimg.cc/nc2GdVjt/IMG-20261014-185728-937.jpg", "🌷 جان دلم... همیشه برای من خاص و دوست‌داشتنی می‌مانی."),
+    ("https://i.postimg.cc/ZKHxfYBS/IMG-20261014-185729-001.jpg", "🦌 آهوی دوست‌داشتنی من... دوستت دارم، بیشتر از چیزی که بتوانم بگویم ❤️"),
 ]
 
 def deer_gallery_keyboard():
-    """One separate button per photo; numbers appear on buttons, not captions."""
-    rows = []
-    for index in range(0, len(DEER_GALLERY), 2):
-        row = []
-        for photo_index in range(index, min(index + 2, len(DEER_GALLERY))):
-            row.append({
-                "text": f"🦌 عکس شماره {photo_index + 1}",
-                "callback_data": f"deer_photo_{photo_index + 1}"
-            })
-        rows.append(row)
-    rows.append([{"text": "🔙 بازگشت به منو", "callback_data": "deer_gallery_close"}])
-    return {"inline_keyboard": rows}
+    """Reply-keyboard buttons shown in the bot's bottom keyboard panel."""
+    return {"keyboard": [
+        ["🦌 عکس شماره ۱", "🦌 عکس شماره ۲"],
+        ["🦌 عکس شماره ۳", "🦌 عکس شماره ۴"],
+        ["🦌 عکس شماره ۵", "🦌 عکس شماره ۶"],
+        ["🦌 عکس شماره ۷", "🦌 عکس شماره ۸"],
+        ["🔙 بازگشت به منو"]
+    ], "resize_keyboard": True}
 
 def show_deer_gallery_menu(chat_id):
     send_message(chat_id,
-        "🦌 آهوی من ❤️\nبرای دیدن هر عکس، دکمه شماره همان عکس را بزن:",
+        "🦌 آهوی من ❤️\nیکی از دکمه‌های پایین را انتخاب کن تا همان عکس همراه با متن عاشقانه‌اش برایت ارسال شود:",
         deer_gallery_keyboard(), protect_content=False)
 
 def iran_now():
@@ -439,6 +435,26 @@ def handle_message(chat_id, text, file_data=None):
             send_message(chat_id, "🔐 برای دیدن گالری خصوصی «🦌 آهوی من» رمز را وارد کن:", get_password_keyboard())
         return
 
+    if text.startswith("🦌 عکس شماره "):
+        if not user.get("deer_gallery_access"):
+            user["waiting_for_deer_password"] = True
+            send_message(chat_id, "🔐 این گالری خصوصی است. رمز ۱۳۸۶ را وارد کن:", get_password_keyboard())
+            return
+        try:
+            photo_number = int(text.rsplit(" ", 1)[1])
+        except (ValueError, IndexError):
+            photo_number = 0
+        if 1 <= photo_number <= len(DEER_GALLERY):
+            photo_url, romantic_caption = DEER_GALLERY[photo_number - 1]
+            if not send_photo(chat_id, photo_url, romantic_caption, protect_content=False):
+                send_message(chat_id, "❌ ارسال این عکس انجام نشد. کمی بعد دوباره تلاش کن.", deer_gallery_keyboard())
+            else:
+                # Keep the gallery keyboard visible after each selected photo.
+                send_message(chat_id, "🦌 برای دیدن عکس دیگری، یکی از دکمه‌های پایین را بزن ❤️", deer_gallery_keyboard(), protect_content=False)
+        else:
+            send_message(chat_id, "شماره عکس معتبر نیست.", deer_gallery_keyboard())
+        return
+
     if text == "💬 چت دوطرفه":
         if chat_id not in (OWNER_CHAT_ID, PARTNER_CHAT_ID):
             send_message(chat_id, "❌ این بخش فقط برای مالک و پارتنر است.", get_main_keyboard(chat_id)); return
@@ -664,37 +680,6 @@ def webhook():
             chat_id = str(from_user.get("id", ""))
             cb = callback.get("data", "")
             log.info("CALLBACK IN: chat=%s data=%s", chat_id, cb)
-            if cb.startswith("deer_photo_"):
-                user_state = user_access.get(chat_id, {})
-                try:
-                    photo_number = int(cb.rsplit("_", 1)[1])
-                except (ValueError, IndexError):
-                    photo_number = 0
-                if not user_state.get("deer_gallery_access"):
-                    api_call("answerCallbackQuery", data={
-                        "callback_query_id": callback.get("id", ""),
-                        "text": "ابتدا رمز گالری را وارد کن.", "show_alert": True
-                    })
-                    return "OK", 200
-                if 1 <= photo_number <= len(DEER_GALLERY):
-                    photo_url, _old_caption = DEER_GALLERY[photo_number - 1]
-                    api_call("answerCallbackQuery", data={"callback_query_id": callback.get("id", "")})
-                    send_photo(chat_id, photo_url, f"🦌 آهوی من ❤️", protect_content=False)
-                else:
-                    api_call("answerCallbackQuery", data={
-                        "callback_query_id": callback.get("id", ""), "text": "شماره عکس معتبر نیست."
-                    })
-                return "OK", 200
-            elif cb == "deer_gallery_close":
-                api_call("answerCallbackQuery", data={"callback_query_id": callback.get("id", "")})
-                msg = callback.get("message", {})
-                if msg.get("message_id"):
-                    api_call("editMessageText", data={
-                        "chat_id": chat_id,
-                        "message_id": msg["message_id"],
-                        "text": "گالری آهوی من بسته شد. برای باز کردن دوباره از منوی اصلی استفاده کن."
-                    })
-                return "OK", 200
             if chat_id == OWNER_CHAT_ID:
                 if cb.startswith("upd_toggle_"):
                     uid = cb[len("upd_toggle_"):]
