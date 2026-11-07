@@ -18,7 +18,7 @@ log = logging.getLogger("ahu_bot")
 TOKEN = os.environ.get("BOT_TOKEN", "").strip()
 OWNER_CHAT_ID = "7989818498"
 PARTNER_CHAT_ID = "7706282234"
-PASSWORD = os.environ.get("GALLERY_PASSWORD", "1386")
+PASSWORD = "1386"  # رمز ثابت گالری عکس‌ها
 
 BIRTH_DAY, BIRTH_MONTH = 8, 8
 BIRTH_HOUR, BIRTH_MINUTE = 0, 0
@@ -130,14 +130,14 @@ PHOTOS = {
 
 
 DEER_GALLERY = [
-    ("https://i.postimg.cc/ZK4LFvRb/IMG-20261009-142818-837.jpg", "🦌 آهوی من... ❤️"),
-    ("https://i.postimg.cc/gkmKqLJG/IMG-20261014-185713-111.jpg", "🌹 زیبای من..."),
-    ("https://i.postimg.cc/wTgkcRvx/IMG-20261014-185714-929.jpg", "❤️ قشنگ‌ترین قاب من"),
-    ("https://i.postimg.cc/SNkG7Ysy/IMG-20261014-185716-547.jpg", "✨ ماه من"),
-    ("https://i.postimg.cc/L6D3y4YK/IMG-20261014-185718-400.jpg", "🌸 عزیز دلم"),
-    ("https://i.postimg.cc/CL7svMBp/IMG-20261014-185728-651.jpg", "💖 تمام زیبایی من"),
-    ("https://i.postimg.cc/nc2GdVjt/IMG-20261014-185728-937.jpg", "🌷 جانِ دلم"),
-    ("https://i.postimg.cc/ZKHxfYBS/IMG-20261014-185729-001.jpg", "🦌 آهوی دوست‌داشتنی من ❤️"),
+    ("https://i.postimg.cc/ZK4LFvRb/IMG-20261009-142818-837.jpg", "🦌 عکس شماره ۱ | آهوی من... ❤️"),
+    ("https://i.postimg.cc/gkmKqLJG/IMG-20261014-185713-111.jpg", "🌹 عکس شماره ۲ | زیبای من..."),
+    ("https://i.postimg.cc/wTgkcRvx/IMG-20261014-185714-929.jpg", "❤️ عکس شماره ۳ | قشنگ‌ترین قاب من"),
+    ("https://i.postimg.cc/SNkG7Ysy/IMG-20261014-185716-547.jpg", "✨ عکس شماره ۴ | ماه من"),
+    ("https://i.postimg.cc/L6D3y4YK/IMG-20261014-185718-400.jpg", "🌸 عکس شماره ۵ | عزیز دلم"),
+    ("https://i.postimg.cc/CL7svMBp/IMG-20261014-185728-651.jpg", "💖 عکس شماره ۶ | تمام زیبایی من"),
+    ("https://i.postimg.cc/nc2GdVjt/IMG-20261014-185728-937.jpg", "🌷 عکس شماره ۷ | جانِ دلم"),
+    ("https://i.postimg.cc/ZKHxfYBS/IMG-20261014-185729-001.jpg", "🦌 عکس شماره ۸ | آهوی دوست‌داشتنی من ❤️"),
 ]
 
 def iran_now():
@@ -376,6 +376,7 @@ def handle_message(chat_id, text, file_data=None):
         keep_photos = user.get("photos", False)
         user_access[chat_id] = {
             "photos": keep_photos, "waiting_for_password": False,
+            "waiting_for_deer_password": False, "deer_gallery_access": user_access[chat_id].get("deer_gallery_access", False),
             "waiting_for_chat_message": False, "waiting_for_file": False,
             "mode": None, "chat_target": None
         }
@@ -384,6 +385,7 @@ def handle_message(chat_id, text, file_data=None):
     if text == "/start":
         user_access[chat_id] = {
             "photos": False, "waiting_for_password": False,
+            "waiting_for_deer_password": False, "deer_gallery_access": False,
             "waiting_for_chat_message": False, "waiting_for_file": False,
             "mode": None, "chat_target": None
         }
@@ -399,10 +401,26 @@ def handle_message(chat_id, text, file_data=None):
             show_broadcast_picker(chat_id)
         return
 
+    # The deer gallery is password-protected separately, using the same 1386 code.
+    if user.get("waiting_for_deer_password"):
+        user["waiting_for_deer_password"] = False
+        if text == PASSWORD:
+            user["deer_gallery_access"] = True
+            send_message(chat_id, "✅ رمز درست است! گالری 🦌 آهوی من باز شد.\n۸ عکس شماره‌گذاری‌شده را ببین ❤️")
+            for photo_url, caption in DEER_GALLERY:
+                send_photo(chat_id, photo_url, caption, protect_content=False)
+        else:
+            send_message(chat_id, "❌ رمز اشتباه است. برای ورود به گالری، رمز ۱۳۸۶ را وارد کن.", get_main_keyboard(chat_id))
+        return
+
     if text == "🦌 آهوی من":
-        send_message(chat_id, "🦌 گالری آهوی من ❤️\nاین قاب‌های قشنگ تقدیم به تو:")
-        for photo_url, caption in DEER_GALLERY:
-            send_photo(chat_id, photo_url, caption, protect_content=False)
+        if user.get("deer_gallery_access"):
+            send_message(chat_id, "🦌 گالری آهوی من ❤️\n۸ عکس شماره‌گذاری‌شده تقدیم به تو:")
+            for photo_url, caption in DEER_GALLERY:
+                send_photo(chat_id, photo_url, caption, protect_content=False)
+        else:
+            user["waiting_for_deer_password"] = True
+            send_message(chat_id, "🔐 برای دیدن گالری خصوصی «🦌 آهوی من» رمز را وارد کن:", get_password_keyboard())
         return
 
     if text == "💬 چت دوطرفه":
