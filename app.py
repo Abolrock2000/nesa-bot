@@ -10,6 +10,7 @@ import threading
 import time
 import logging
 import sqlite3
+from cryptography.fernet import Fernet, InvalidToken
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -18,7 +19,7 @@ log = logging.getLogger("ahu_bot")
 TOKEN = os.environ.get("BOT_TOKEN", "").strip()
 OWNER_CHAT_ID = "7989818498"
 PARTNER_CHAT_ID = "7706282234"
-PASSWORD = "1386"  # رمز ثابت گالری عکس‌ها
+PASSWORD = os.environ.get("GALLERY_PASSWORD", "1386")
 
 BIRTH_DAY, BIRTH_MONTH = 8, 8
 BIRTH_HOUR, BIRTH_MINUTE = 0, 0
@@ -54,14 +55,139 @@ def init_user_db():
             first_seen TEXT NOT NULL,
             last_seen TEXT NOT NULL
         )""")
+        conn.execute("""CREATE TABLE IF NOT EXISTS relationship_notes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            kind TEXT NOT NULL,
+            author_id TEXT NOT NULL,
+            author_name TEXT DEFAULT '',
+            encrypted_body BLOB NOT NULL,
+            created_at TEXT NOT NULL
+        )""")
+        # پارتنر از همان ابتدا در فهرست وجود دارد؛ حتی اگر هنوز /start نزده باشد.
+        now = datetime.datetime.now(IRAN_TZ).isoformat()
+        conn.execute("""INSERT OR IGNORE INTO bot_users
+            (chat_id, first_name, last_name, username, first_seen, last_seen)
+            VALUES (?, ?, '', '', ?, ?)""",
+            (PARTNER_CHAT_ID, "❤️ پارتنر", now, now))
         conn.commit()
 
-def remember_user(chat_id, first_name="", last_name="", username=""):
+# کلید رمزگذاری دفتر مشترک: روی دیسک پایدار Render نگهداری می‌شود.
+# برای امنیت بیشتر می‌توان JOURNAL_ENCRYPTION_KEY را به‌صورت secret در Render تنظیم کرد.
+JOURNAL_KEY_PATH = os.path.join(DATA_DIR, "journal_encryption.key")
+
+def get_journal_cipher():
+    configured = os.environ.get("JOURNAL_ENCRYPTION_KEY", "").strip()
+    if configured:
+        key = configured.encode("ascii")
+        return Fernet(key)
+    if os.path.exists(JOURNAL_KEY_PATH):
+        with open(JOURNAL_KEY_PATH, "rb") as f:
+            key = f.read().strip()
+    else:
+        key = Fernet.generate_key()
+        with open(JOURNAL_KEY_PATH, "wb") as f:
+            f.write(key)
+        try:
+            os.chmod(JOURNAL_KEY_PATH, 0o600)
+        except OSError:
+            pass
+    return Fernet(key)
+
+JOURNAL_CIPHER = get_journal_cipher()
+JOURNAL_WAITING = {}
+
+JOURNAL_TITLES = {"apology": "معذرت‌نامه", "hurt": "ناراحتی"}
+
+def journal_panel(chat_id, kind):
+    if kind == "apology":
+        title = "💌 صندوق معذرت‌نامه‌ها"
+        description = ("اینجا معذرت‌خواهی‌هامون رو بعد از دعوا ثبت می‌کنیم؛ "
+                       "تا وقتی موقعیتش پیش اومد جبران کنیم و جلوی چشممون باشه "
+                       "که اشتباه‌هامون رو دوباره تکرار نکنیم. ❤️")
+    else:
+        title = "💔 صندوق ناراحتی‌ها"
+        description = ("اینجا ناراحتی‌هامون رو ثبت می‌کنیم تا بهتر بفهمیم چه چیزی "
+                       "دل همدیگه رو شکسته، موقعیت جبران رو از دست ندیم و مراقب باشیم "
+                       "همون ناراحتی دوباره تکرار نشه. ❤️")
+    keyboard = {"inline_keyboard": [
+        [{"text": "➕ ثبت مورد جدید", "callback_data": "journal_add_" + kind}],
+        [{"text": "📚 دیدن موارد ثبت‌شده", "callback_data": "journal_list_" + kind}],
+        [{"text": "🔙 بستن صندوق", "callback_data": "journal_close"}]
+    ]}
+    send_message(chat_id, title + "\n\n" + description, keyboard)
+
+def save_journal_note(kind, chat_id, author_name, body):
+    encrypted = JOURNAL_CIPHER.encrypt(body.strip().encode("utf-8"))
+    with sqlite3.connect(USER_DB_PATH) as conn:
+        cur = conn.execute(
+            "INSERT INTO relationship_notes (kind, author_id, author_name, encrypted_body, created_at) VALUES (?, ?, ?, ?, ?)",
+            (kind, str(chat_id), author_name or "بدون نام", encrypted, iran_now().isoformat())
+        )
+        note_id = cur.lastrowid
+        number = conn.execute("SELECT COUNT(*) FROM relationship_notes WHERE kind=?", (kind,)).fetchone()[0]
+        conn.commit()
+    return note_id, number
+
+def show_journal_notes(chat_id, kind):
+    with sqlite3.connect(USER_DB_PATH) as conn:
+        rows = conn.execute(
+            "SELECT id, author_name, created_at FROM relationship_notes WHERE kind=? ORDER BY id DESC LIMIT 30",
+            (kind,)
+        ).fetchall()
+    title = JOURNAL_TITLES[kind]
+    if not rows:
+        send_message(chat_id, f"📭 هنوز هیچ {title}ی ثبت نشده است.\nبا دکمه ➕ اولین مورد رو ثبت کنید.")
+        return
+    keyboard = {"inline_keyboard": []}
+    for idx, (note_id, author, created_at) in enumerate(rows, 1):
+        try:
+            dt = datetime.datetime.fromisoformat(created_at).strftime("%m/%d %H:%M")
+        except Exception:
+            dt = ""
+        keyboard["inline_keyboard"].append([{
+            "text": f"📄 {title} ثبت‌شده | {dt} | {author}"[:60],
+            "callback_data": f"jview_{kind}_{note_id}"
+        }])
+    keyboard["inline_keyboard"].append([{"text": "➕ ثبت مورد جدید", "callback_data": "journal_add_" + kind}])
+    send_message(chat_id, f"📚 صندوق {title}ها\nبرای خواندن هر مورد، دکمه جداگانه‌اش رو بزن:", keyboard)
+
+def show_one_journal_note(chat_id, kind, note_id):
+    with sqlite3.connect(USER_DB_PATH) as conn:
+        row = conn.execute(
+            "SELECT author_name, encrypted_body, created_at FROM relationship_notes WHERE id=? AND kind=?",
+            (int(note_id), kind)
+        ).fetchone()
+    if not row:
+        send_message(chat_id, "این یادداشت پیدا نشد.")
+        return
+    author, encrypted, created_at = row
+    try:
+        body = JOURNAL_CIPHER.decrypt(bytes(encrypted)).decode("utf-8")
+    except (InvalidToken, ValueError):
+        body = "🔒 بازکردن این یادداشت ممکن نیست؛ کلید رمزگذاری تغییر کرده است."
+    try:
+        dt = datetime.datetime.fromisoformat(created_at).strftime("%Y/%m/%d - %H:%M")
+    except Exception:
+        dt = created_at
+    send_message(chat_id, f"💌 {JOURNAL_TITLES[kind]}\n👤 ثبت‌کننده: {author}\n📅 {dt}\n\n{body}")
+
+def start_journal(chat_id, kind):
+    if str(chat_id) not in (OWNER_CHAT_ID, PARTNER_CHAT_ID):
+        send_message(chat_id, "⛔ این صندوق فقط بین شما دو نفر مشترک است.")
+        return
+    user_access.setdefault(str(chat_id), {})["waiting_journal_password"] = kind
+    send_message(chat_id, f"🔐 برای ورود به صندوق {JOURNAL_TITLES[kind]} رمز مخصوص رو وارد کن:", get_password_keyboard())
+
+def remember_user(chat_id, first_name="", last_name="", username="", register=False):
     chat_id = str(chat_id)
     if not chat_id or chat_id == OWNER_CHAT_ID:
         return
     now = iran_now().isoformat()
     with sqlite3.connect(USER_DB_PATH) as conn:
+        exists = conn.execute("SELECT 1 FROM bot_users WHERE chat_id=?", (chat_id,)).fetchone()
+        # کاربران عادی فقط با /start وارد فهرست می‌شوند؛ اطلاعات کاربران قبلی به‌روز می‌ماند.
+        if not exists and not register:
+            return
         conn.execute("""INSERT INTO bot_users
             (chat_id, first_name, last_name, username, first_seen, last_seen)
             VALUES (?, ?, ?, ?, ?, ?)
@@ -83,7 +209,10 @@ def broadcast_picker_keyboard(owner_id):
     rows = []
     users = list_known_users()
     for uid, first, last, username in users:
-        label = (first + " " + last).strip() or ("@" + username if username else "کاربر " + uid)
+        if uid == PARTNER_CHAT_ID:
+            label = "❤️ پارتنر (پیش‌فرض)"
+        else:
+            label = (first + " " + last).strip() or ("@" + username if username else "کاربر " + uid)
         if len(label) > 35:
             label = label[:32] + "..."
         mark = "☑️ " if uid in selected else "⬜️ "
@@ -93,7 +222,8 @@ def broadcast_picker_keyboard(owner_id):
     return {"inline_keyboard": rows}, len(users)
 
 def show_broadcast_picker(owner_id):
-    BROADCAST_SELECTIONS[str(owner_id)] = set()
+    # پارتنر به‌صورت پیش‌فرض انتخاب شده؛ مالک می‌تواند تیکش را بردارد.
+    BROADCAST_SELECTIONS[str(owner_id)] = {PARTNER_CHAT_ID}
     keyboard, total = broadcast_picker_keyboard(owner_id)
     if total == 0:
         send_message(owner_id, "هنوز هیچ کاربری در فهرست ثبت‌شده ربات وجود ندارد.")
@@ -130,30 +260,15 @@ PHOTOS = {
 
 
 DEER_GALLERY = [
-    ("https://i.postimg.cc/ZK4LFvRb/IMG-20261009-142818-837.jpg", "🦌 آهوی من... تو قشنگ‌ترین اتفاق دنیای منی ❤️"),
-    ("https://i.postimg.cc/gkmKqLJG/IMG-20261014-185713-111.jpg", "🌹 زیبای من... هر بار نگاهت می‌کنم، بیشتر عاشقت می‌شوم."),
-    ("https://i.postimg.cc/wTgkcRvx/IMG-20261014-185714-929.jpg", "❤️ قشنگ‌ترین قاب زندگی من، همیشه تصویر توست."),
-    ("https://i.postimg.cc/SNkG7Ysy/IMG-20261014-185716-547.jpg", "✨ ماه من... لبخندت روشنایی روزهای من است."),
-    ("https://i.postimg.cc/L6D3y4YK/IMG-20261014-185718-400.jpg", "🌸 عزیز دلم... بودنت برای من از هر چیزی باارزش‌تر است."),
-    ("https://i.postimg.cc/CL7svMBp/IMG-20261014-185728-651.jpg", "💖 تمام زیبایی من در نگاه و لبخند تو خلاصه می‌شود."),
-    ("https://i.postimg.cc/nc2GdVjt/IMG-20261014-185728-937.jpg", "🌷 جان دلم... همیشه برای من خاص و دوست‌داشتنی می‌مانی."),
-    ("https://i.postimg.cc/ZKHxfYBS/IMG-20261014-185729-001.jpg", "🦌 آهوی دوست‌داشتنی من... دوستت دارم، بیشتر از چیزی که بتوانم بگویم ❤️"),
+    ("https://i.postimg.cc/ZK4LFvRb/IMG-20261009-142818-837.jpg", "🦌 آهوی من... ❤️"),
+    ("https://i.postimg.cc/gkmKqLJG/IMG-20261014-185713-111.jpg", "🌹 زیبای من..."),
+    ("https://i.postimg.cc/wTgkcRvx/IMG-20261014-185714-929.jpg", "❤️ قشنگ‌ترین قاب من"),
+    ("https://i.postimg.cc/SNkG7Ysy/IMG-20261014-185716-547.jpg", "✨ ماه من"),
+    ("https://i.postimg.cc/L6D3y4YK/IMG-20261014-185718-400.jpg", "🌸 عزیز دلم"),
+    ("https://i.postimg.cc/CL7svMBp/IMG-20261014-185728-651.jpg", "💖 تمام زیبایی من"),
+    ("https://i.postimg.cc/nc2GdVjt/IMG-20261014-185728-937.jpg", "🌷 جانِ دلم"),
+    ("https://i.postimg.cc/ZKHxfYBS/IMG-20261014-185729-001.jpg", "🦌 آهوی دوست‌داشتنی من ❤️"),
 ]
-
-def deer_gallery_keyboard():
-    """Reply-keyboard buttons shown in the bot's bottom keyboard panel."""
-    return {"keyboard": [
-        ["🦌 عکس شماره ۱", "🦌 عکس شماره ۲"],
-        ["🦌 عکس شماره ۳", "🦌 عکس شماره ۴"],
-        ["🦌 عکس شماره ۵", "🦌 عکس شماره ۶"],
-        ["🦌 عکس شماره ۷", "🦌 عکس شماره ۸"],
-        ["🔙 بازگشت به منو"]
-    ], "resize_keyboard": True}
-
-def show_deer_gallery_menu(chat_id):
-    send_message(chat_id,
-        "🦌 آهوی من ❤️\nیکی از دکمه‌های پایین را انتخاب کن تا همان عکس همراه با متن عاشقانه‌اش برایت ارسال شود:",
-        deer_gallery_keyboard(), protect_content=False)
 
 def iran_now():
     return datetime.datetime.now(datetime.timezone.utc).astimezone(IRAN_TZ)
@@ -240,7 +355,7 @@ def send_voice(chat_id, voice, caption="", protect_content=True):
                       protect_content, timeout=150)
 
 def get_main_keyboard(chat_id=None):
-    rows = [["📸 عکس‌ها"], ["🦌 آهوی من"], ["📅 روز آشنایی", "⏳ ساعت تا تولدت"], ["💬 چت دوطرفه"]]
+    rows = [["📸 عکس‌ها"], ["🦌 آهوی من"], ["💌 معذرت‌نامه", "💔 ناراحتی‌ها"], ["📅 روز آشنایی", "⏳ ساعت تا تولدت"], ["💬 چت دوطرفه"]]
     if str(chat_id) == OWNER_CHAT_ID:
         rows.append(["📊 وضعیت پارتنر"])
         rows.append(["📢 ارسال پیام بروزرسانی"])
@@ -387,11 +502,45 @@ def handle_message(chat_id, text, file_data=None):
         "mode": None, "chat_target": None
     })
 
+    # رمز صندوق‌ها و ثبت یادداشت‌ها؛ فقط برای مالک و پارتنر.
+    if user.get("waiting_journal_password"):
+        kind = user.get("waiting_journal_password")
+        if text == PASSWORD:
+            user["waiting_journal_password"] = None
+            user["journal_unlocked"] = kind
+            send_message(chat_id, "✅ رمز صحیح است؛ صندوق مشترک باز شد. ❤️")
+            journal_panel(chat_id, kind)
+        else:
+            send_message(chat_id, "❌ رمز اشتباهه؛ دوباره وارد کن.", get_password_keyboard())
+        return
+
+    if user.get("waiting_journal_note"):
+        kind = user.pop("waiting_journal_note")
+        if text in ("لغو", "❌ لغو", "🔙 بازگشت به منو"):
+            send_message(chat_id, "ثبت یادداشت لغو شد.", get_main_keyboard(chat_id)); return
+        if not text:
+            send_message(chat_id, "متن یادداشت خالیه؛ لطفاً دوباره بنویس."); return
+        if len(text) > 3500:
+            user["waiting_journal_note"] = kind
+            send_message(chat_id, "متن خیلی طولانیه؛ لطفاً کمتر از ۳۵۰۰ نویسه بنویس."); return
+        author_name = "مالک" if chat_id == OWNER_CHAT_ID else "پارتنر"
+        note_id, number = save_journal_note(kind, chat_id, author_name, text)
+        other_id = PARTNER_CHAT_ID if chat_id == OWNER_CHAT_ID else OWNER_CHAT_ID
+        label = JOURNAL_TITLES[kind]
+        send_message(chat_id, f"✅ {label} شماره {number} ثبت و در صندوق مشترک ذخیره شد. ❤️")
+        send_message(other_id, f"🔔 {label} شماره {number} ثبت شد.\n📬 به صندوق {label}ها سر بزنید؛ یک مورد جدید منتظر شماست. ❤️")
+        journal_panel(chat_id, kind)
+        return
+
+    if text == "💌 معذرت‌نامه":
+        start_journal(chat_id, "apology"); return
+    if text == "💔 ناراحتی‌ها":
+        start_journal(chat_id, "hurt"); return
+
     if text == "🔙 بازگشت به منو":
         keep_photos = user.get("photos", False)
         user_access[chat_id] = {
             "photos": keep_photos, "waiting_for_password": False,
-            "waiting_for_deer_password": False, "deer_gallery_access": user_access[chat_id].get("deer_gallery_access", False),
             "waiting_for_chat_message": False, "waiting_for_file": False,
             "mode": None, "chat_target": None
         }
@@ -400,7 +549,6 @@ def handle_message(chat_id, text, file_data=None):
     if text == "/start":
         user_access[chat_id] = {
             "photos": False, "waiting_for_password": False,
-            "waiting_for_deer_password": False, "deer_gallery_access": False,
             "waiting_for_chat_message": False, "waiting_for_file": False,
             "mode": None, "chat_target": None
         }
@@ -416,43 +564,10 @@ def handle_message(chat_id, text, file_data=None):
             show_broadcast_picker(chat_id)
         return
 
-    # The deer gallery is password-protected separately, using the same 1386 code.
-    if user.get("waiting_for_deer_password"):
-        user["waiting_for_deer_password"] = False
-        if text == PASSWORD:
-            user["deer_gallery_access"] = True
-            send_message(chat_id, "✅ رمز درست است! گالری 🦌 آهوی من باز شد ❤️")
-            show_deer_gallery_menu(chat_id)
-        else:
-            send_message(chat_id, "❌ رمز اشتباه است. برای ورود به گالری، رمز ۱۳۸۶ را وارد کن.", get_main_keyboard(chat_id))
-        return
-
     if text == "🦌 آهوی من":
-        if user.get("deer_gallery_access"):
-            show_deer_gallery_menu(chat_id)
-        else:
-            user["waiting_for_deer_password"] = True
-            send_message(chat_id, "🔐 برای دیدن گالری خصوصی «🦌 آهوی من» رمز را وارد کن:", get_password_keyboard())
-        return
-
-    if text.startswith("🦌 عکس شماره "):
-        if not user.get("deer_gallery_access"):
-            user["waiting_for_deer_password"] = True
-            send_message(chat_id, "🔐 این گالری خصوصی است. رمز ۱۳۸۶ را وارد کن:", get_password_keyboard())
-            return
-        try:
-            photo_number = int(text.rsplit(" ", 1)[1])
-        except (ValueError, IndexError):
-            photo_number = 0
-        if 1 <= photo_number <= len(DEER_GALLERY):
-            photo_url, romantic_caption = DEER_GALLERY[photo_number - 1]
-            if not send_photo(chat_id, photo_url, romantic_caption, protect_content=False):
-                send_message(chat_id, "❌ ارسال این عکس انجام نشد. کمی بعد دوباره تلاش کن.", deer_gallery_keyboard())
-            else:
-                # Keep the gallery keyboard visible after each selected photo.
-                send_message(chat_id, "🦌 برای دیدن عکس دیگری، یکی از دکمه‌های پایین را بزن ❤️", deer_gallery_keyboard(), protect_content=False)
-        else:
-            send_message(chat_id, "شماره عکس معتبر نیست.", deer_gallery_keyboard())
+        send_message(chat_id, "🦌 گالری آهوی من ❤️\nاین قاب‌های قشنگ تقدیم به تو:")
+        for photo_url, caption in DEER_GALLERY:
+            send_photo(chat_id, photo_url, caption, protect_content=False)
         return
 
     if text == "💬 چت دوطرفه":
@@ -646,7 +761,8 @@ def webhook():
             text = message.get("text", "")
             file_data = extract_file(message)
             remember_user(chat_id, chat.get("first_name", ""),
-                          chat.get("last_name", ""), chat.get("username", ""))
+                          chat.get("last_name", ""), chat.get("username", ""),
+                          register=(text == "/start" or text.startswith("/start ")))
             log.info("WEBHOOK IN: chat=%s text=%r file=%s update_id=%s",
                      chat_id, text[:100], (file_data or {}).get("type"), data.get("update_id"))
 
@@ -680,6 +796,35 @@ def webhook():
             chat_id = str(from_user.get("id", ""))
             cb = callback.get("data", "")
             log.info("CALLBACK IN: chat=%s data=%s", chat_id, cb)
+            if chat_id in (OWNER_CHAT_ID, PARTNER_CHAT_ID) and cb.startswith("jview_"):
+                parts = cb.split("_")
+                if len(parts) == 3 and parts[1] in JOURNAL_TITLES and user_access.get(chat_id, {}).get("journal_unlocked") == parts[1]:
+                    show_one_journal_note(chat_id, parts[1], parts[2])
+                else:
+                    send_message(chat_id, "🔐 برای دیدن یادداشت، ابتدا صندوق مربوطه را با رمز باز کن.")
+                api_call("answerCallbackQuery", data={"callback_query_id": callback.get("id", "")})
+                return "OK", 200
+
+            if chat_id in (OWNER_CHAT_ID, PARTNER_CHAT_ID) and cb.startswith("journal_"):
+                if cb.startswith("journal_add_"):
+                    kind = cb[len("journal_add_"):]
+                    if kind not in JOURNAL_TITLES or user_access.get(chat_id, {}).get("journal_unlocked") != kind:
+                        send_message(chat_id, "🔐 ابتدا از منوی اصلی وارد صندوق شو و رمز را وارد کن.")
+                    else:
+                        user_access.setdefault(chat_id, {})["waiting_journal_note"] = kind
+                        send_message(chat_id, f"✍️ متن {JOURNAL_TITLES[kind]} رو بنویس.\n\nهر چیزی که می‌نویسی برای هر دوی شما در صندوق مشترک می‌مونه. برای لغو بنویس: لغو")
+                elif cb.startswith("journal_list_"):
+                    kind = cb[len("journal_list_"):]
+                    if kind in JOURNAL_TITLES and user_access.get(chat_id, {}).get("journal_unlocked") == kind:
+                        show_journal_notes(chat_id, kind)
+                    else:
+                        send_message(chat_id, "🔐 برای دیدن صندوق، دوباره از منوی اصلی وارد شو و رمز را بزن.")
+                elif cb == "journal_close":
+                    user_access.setdefault(chat_id, {})["journal_unlocked"] = None
+                    send_message(chat_id, "🔒 صندوق بسته شد.", get_main_keyboard(chat_id))
+                api_call("answerCallbackQuery", data={"callback_query_id": callback.get("id", "")})
+                return "OK", 200
+
             if chat_id == OWNER_CHAT_ID:
                 if cb.startswith("upd_toggle_"):
                     uid = cb[len("upd_toggle_"):]
