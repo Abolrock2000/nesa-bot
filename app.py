@@ -1,4 +1,5 @@
-# نسخه امن اولیه: محافظت محتوا به صورت پیش فرض فعال شده است.
+# -*- coding: utf-8 -*-
+# Ahu Goozlum Bot - diagnostic and reliability update
 from flask import Flask, request, jsonify
 import requests
 import json
@@ -7,998 +8,397 @@ import datetime
 import os
 import threading
 import time
+import logging
 
 app = Flask(__name__)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+log = logging.getLogger("ahu_bot")
 
-# ============================================================
-# 🔐 تنظیمات ربات
-# ============================================================
-TOKEN = os.environ.get("BOT_TOKEN", "")
-
-# ============================================================
-# 👑 مالک جدید ربات
-# ============================================================
+TOKEN = os.environ.get("BOT_TOKEN", "").strip()
 OWNER_CHAT_ID = "7989818498"
-
-# ============================================================
-# ❤️ پارتنر
-# ============================================================
 PARTNER_CHAT_ID = "7706282234"
-PASSWORD = "1386"
+PASSWORD = os.environ.get("GALLERY_PASSWORD", "1386")
 
-BIRTH_DAY = 8
-BIRTH_MONTH = 8
-BIRTH_HOUR = 0
-BIRTH_MINUTE = 0
-IRAN_OFFSET = datetime.timedelta(hours=3, minutes=30)
+BIRTH_DAY, BIRTH_MONTH = 8, 8
+BIRTH_HOUR, BIRTH_MINUTE = 0, 0
+IRAN_TZ = datetime.timezone(datetime.timedelta(hours=3, minutes=30))
 WEBSITE_URL = "https://nesa-bot.onrender.com"
 
-# ============================================================
-# 🗂️ حافظه موقت
-# ============================================================
+AUTHORIZED_USERS = {OWNER_CHAT_ID, PARTNER_CHAT_ID}
 user_access = {}
 PARTNER_ACTIVITY = {}
-BOT_ACTIVE = True
-
-# 🔐 سیستم تایید ورود کاربران
-AUTHORIZED_USERS = {OWNER_CHAT_ID, PARTNER_CHAT_ID}
 PENDING_USERS = {}
 LOGIN_PASSWORDS = {}
+BOT_ACTIVE = True
 
-
-# ============================================================
-# 📸 عکس‌های گالری
-# ============================================================
 PHOTOS = {
-    "📸 عکس ۱": {
-        "path": "photos/IMG_20260801_224828_501.jpg",
-        "caption": "🌹 عشق زندگیم... ❤️"
-    },
-    "📸 عکس ۲": {
-        "path": "photos/null_14041109_222510829.jpg",
-        "caption": "💫 قلب من... تو هستی"
-    },
-    "📸 عکس ۳": {
-        "path": "photos/null_14041125_153021650.jpg",
-        "caption": "🌸 بهار زندگی من..."
-    },
-    "📸 عکس ۴": {
-        "path": "photos/IMG_20260707_153249_974.jpg",
-        "caption": "🌙 ماه شب‌های من..."
-    },
-    "📸 عکس ۵": {
-        "path": "photos/IMG_20260709_234307_968.jpg",
-        "caption": "☀️ روشن‌ترین روز من..."
-    },
-    "📸 عکس ۶": {
-        "path": "photos/IMG_20260719_211523_837.jpg",
-        "caption": "❤️ تمام دنیای من..."
-    },
-    "📸 عکس ۷": {
-        "path": "https://i.postimg.cc/5tDhyRgM/IMG-20260318-184739-714.jpg",
-        "caption": "💖 عکس مخصوص... ❤️"
-    },
-    "📸 عکس جدید": {
-        "path": "photos/file_00000000f1788210bc5e8d993e16a277.png",
-        "caption": "🌹 این عکس مخصوص توست... ❤️"
-    }
+    "📸 عکس ۱": {"path": "photos/IMG_20260801_224828_501.jpg", "caption": "🌹 عشق زندگیم... ❤️"},
+    "📸 عکس ۲": {"path": "photos/null_14041109_222510829.jpg", "caption": "💫 قلب من... تو هستی"},
+    "📸 عکس ۳": {"path": "photos/null_14041125_153021650.jpg", "caption": "🌸 بهار زندگی من..."},
+    "📸 عکس ۴": {"path": "photos/IMG_20260707_153249_974.jpg", "caption": "🌙 ماه شب‌های من..."},
+    "📸 عکس ۵": {"path": "photos/IMG_20260709_234307_968.jpg", "caption": "☀️ روشن‌ترین روز من..."},
+    "📸 عکس ۶": {"path": "photos/IMG_20260719_211523_837.jpg", "caption": "❤️ تمام دنیای من..."},
+    "📸 عکس ۷": {"path": "https://i.postimg.cc/5tDhyRgM/IMG-20260318-184739-714.jpg", "caption": "💖 عکس مخصوص... ❤️"},
+    "📸 عکس جدید": {"path": "photos/file_00000000f1788210bc5e8d993e16a277.png", "caption": "🌹 این عکس مخصوص توست... ❤️"},
 }
 
-# ============================================================
-# 🕐 زمان ایران
-# ============================================================
-def get_current_iran_time():
-    utc_now = datetime.datetime.now(datetime.timezone.utc)
-    return utc_now.astimezone(datetime.timezone(IRAN_OFFSET))
+def iran_now():
+    return datetime.datetime.now(datetime.timezone.utc).astimezone(IRAN_TZ)
 
-# ============================================================
-# 📊 ثبت فعالیت کاربر
-# ============================================================
-def log_partner_activity(chat_id, action="تعامل", first_name="", last_name="", username="", phone_number=""):
-    global PARTNER_ACTIVITY
-    chat_id = str(chat_id)
+def api_call(method, chat_id=None, data=None, files=None, timeout=30):
+    """Central Telegram API caller: logs useful errors without printing the bot token."""
+    if not TOKEN:
+        log.error("BOT_TOKEN is missing in Render Environment.")
+        return False, {"description": "BOT_TOKEN is missing"}
+    payload = dict(data or {})
+    if chat_id is not None:
+        payload["chat_id"] = str(chat_id)
+    url = f"https://api.telegram.org/bot{TOKEN}/{method}"
+    try:
+        response = requests.post(url, data=payload, files=files, timeout=timeout)
+        try:
+            body = response.json()
+        except Exception:
+            body = {"description": response.text[:500]}
+        if response.status_code != 200 or not body.get("ok", False):
+            log.error("Telegram API %s failed: HTTP %s | %s",
+                      method, response.status_code, body)
+            return False, body
+        return True, body
+    except requests.RequestException as exc:
+        log.exception("Telegram API %s request exception: %s", method, exc)
+        return False, {"description": str(exc)}
 
-    # 👑 مالک هرگز به عنوان پارتنر گزارش نمی‌شود
-    if chat_id == OWNER_CHAT_ID:
-        return
+def send_message(chat_id, text, reply_markup=None, protect_content=True):
+    data = {"text": str(text), "protect_content": str(bool(protect_content)).lower()}
+    if reply_markup is not None:
+        data["reply_markup"] = json.dumps(reply_markup, ensure_ascii=False)
+    ok, _ = api_call("sendMessage", chat_id, data, timeout=25)
+    log.info("sendMessage to chat %s: %s", str(chat_id), "OK" if ok else "FAILED")
+    return ok
 
-    now = get_current_iran_time()
+def send_media(method, chat_id, media_key, media_data, caption="", protect_content=True,
+               extra=None, timeout=120):
+    if not media_data:
+        log.error("%s called with empty media data", method)
+        return False
+    data = {"caption": caption or "", "protect_content": str(bool(protect_content)).lower()}
+    if extra:
+        data.update({k: v for k, v in extra.items() if v not in (None, "")})
+    files = None
+    if isinstance(media_data, str) and media_data.startswith("file_id:"):
+        data[media_key] = media_data.split(":", 1)[1]
+    elif isinstance(media_data, str) and media_data.startswith("http"):
+        data[media_key] = media_data
+    elif isinstance(media_data, str) and os.path.isfile(media_data):
+        try:
+            f = open(media_data, "rb")
+            files = {media_key: f}
+        except OSError as exc:
+            log.exception("Cannot open media file %s: %s", media_data, exc)
+            return False
+    else:
+        log.error("Media not found or unsupported: %s", str(media_data)[:120])
+        return False
+    try:
+        ok, _ = api_call(method, chat_id, data, files=files, timeout=timeout)
+        return ok
+    finally:
+        if files:
+            for f in files.values():
+                f.close()
 
-    if chat_id not in PARTNER_ACTIVITY:
-        PARTNER_ACTIVITY[chat_id] = {
-            "first_seen": now,
-            "last_seen": now,
-            "count": 0,
-            "first_name": first_name,
-            "last_name": last_name,
-            "username": username,
-            "phone_number": phone_number,
-            "last_action": action
-        }
+def send_photo(chat_id, photo, caption="", protect_content=True):
+    return send_media("sendPhoto", chat_id, "photo", photo, caption, protect_content, timeout=60)
 
-    data = PARTNER_ACTIVITY[chat_id]
+def send_video(chat_id, video, caption="", protect_content=True):
+    return send_media("sendVideo", chat_id, "video", video, caption, protect_content, timeout=150)
 
-    if first_name:
-        data["first_name"] = first_name
-    if last_name:
-        data["last_name"] = last_name
-    if username:
-        data["username"] = username
-    if phone_number:
-        data["phone_number"] = phone_number
+def send_audio(chat_id, audio, caption="", title="", performer="", protect_content=True):
+    return send_media("sendAudio", chat_id, "audio", audio, caption, protect_content,
+                      {"title": title, "performer": performer}, timeout=150)
 
-    data["last_seen"] = now
-    data["last_action"] = action
-    data["count"] += 1
+def send_document(chat_id, document, caption="", protect_content=True):
+    return send_media("sendDocument", chat_id, "document", document, caption,
+                      protect_content, timeout=150)
 
-    time_str = now.strftime("%H:%M:%S")
-    date_str = now.strftime("%Y/%m/%d")
+def send_voice(chat_id, voice, caption="", protect_content=True):
+    return send_media("sendVoice", chat_id, "voice", voice, caption,
+                      protect_content, timeout=150)
 
-    weekdays = {
-        "Monday": "دوشنبه",
-        "Tuesday": "سه‌شنبه",
-        "Wednesday": "چهارشنبه",
-        "Thursday": "پنج‌شنبه",
-        "Friday": "جمعه",
-        "Saturday": "شنبه",
-        "Sunday": "یک‌شنبه"
-    }
-    day_persian = weekdays.get(now.strftime("%A"), now.strftime("%A"))
+def get_main_keyboard(chat_id=None):
+    rows = [["📸 عکس‌ها"], ["📅 روز آشنایی", "⏳ ساعت تا تولدت"], ["💬 چت دوطرفه"]]
+    if str(chat_id) == OWNER_CHAT_ID:
+        rows.append(["📊 وضعیت پارتنر"])
+    rows.append(["🔙 بازگشت به منو"])
+    return {"keyboard": rows, "resize_keyboard": True}
 
-    username_text = "@" + username if username else "ندارد"
-    profile_link = "https://t.me/" + username if username else "ندارد"
+def get_photo_keyboard():
+    return {"keyboard": [
+        ["📸 عکس ۱", "📸 عکس ۲", "📸 عکس ۳"],
+        ["📸 عکس ۴", "📸 عکس ۵", "📸 عکس ۶"],
+        ["📸 عکس ۷", "📸 عکس جدید"],
+        ["🔙 بازگشت به منو"]
+    ], "resize_keyboard": True}
 
-    message = f"""
-👀 تعامل جدید با ربات
-👤 اطلاعات کاربر:
+def get_chat_keyboard():
+    return {"keyboard": [
+        ["📤 ارسال پیام"], ["📤 ارسال عکس", "📤 ارسال فیلم"],
+        ["📤 ارسال موزیک"], ["🔙 بازگشت به منو"]
+    ], "resize_keyboard": True}
 
-• آیدی عددی: {chat_id}
-• نام: {first_name or data.get('first_name') or 'نامشخص'}
-• نام خانوادگی: {last_name or data.get('last_name') or 'نامشخص'}
-• یوزرنیم: {username_text}
-• شماره تلفن: {phone_number or data.get('phone_number') or 'نامشخص'}
+def get_password_keyboard():
+    return {"keyboard": [["🔙 بازگشت به منو"]], "resize_keyboard": True}
 
-📌 نوع تعامل: {action}
-📅 تاریخ: {date_str}
-📆 روز: {day_persian}
-⏰ ساعت: {time_str}
-
-🔢 تعداد تعامل‌ها: {data['count']}
-🔗 لینک پروفایل: {profile_link}
-"""
-
-    send_message(OWNER_CHAT_ID, message)
-
-# ============================================================
-# 👀 گزارش تعامل
-# ============================================================
 def report_user_interaction(chat_id, action, first_name="", last_name="", username="", phone_number=""):
     chat_id = str(chat_id)
     if chat_id == OWNER_CHAT_ID:
         return
-    log_partner_activity(chat_id, action, first_name, last_name, username, phone_number)
+    now = iran_now()
+    data = PARTNER_ACTIVITY.setdefault(chat_id, {
+        "first_seen": now, "last_seen": now, "count": 0,
+        "first_name": "", "last_name": "", "username": "",
+        "phone_number": "", "last_action": ""
+    })
+    for key, value in (("first_name", first_name), ("last_name", last_name),
+                       ("username", username), ("phone_number", phone_number)):
+        if value:
+            data[key] = value
+    data["last_seen"] = now
+    data["last_action"] = action
+    data["count"] += 1
+    weekdays = {"Monday":"دوشنبه", "Tuesday":"سه‌شنبه", "Wednesday":"چهارشنبه",
+                "Thursday":"پنج‌شنبه", "Friday":"جمعه", "Saturday":"شنبه", "Sunday":"یک‌شنبه"}
+    uname = data["username"]
+    profile = f"https://t.me/{uname}" if uname else "ندارد"
+    msg = (
+        "👀 تعامل جدید با ربات\n"
+        f"👤 آیدی عددی: {chat_id}\n"
+        f"• نام: {data['first_name'] or 'نامشخص'}\n"
+        f"• نام خانوادگی: {data['last_name'] or 'نامشخص'}\n"
+        f"• یوزرنیم: @{uname if uname else 'ندارد'}\n"
+        f"• شماره تلفن: {data['phone_number'] or 'نامشخص'}\n\n"
+        f"📌 نوع تعامل: {action}\n"
+        f"📅 تاریخ: {now:%Y/%m/%d}\n"
+        f"📆 روز: {weekdays.get(now.strftime('%A'), now.strftime('%A'))}\n"
+        f"⏰ ساعت: {now:%H:%M:%S}\n"
+        f"🔢 تعداد تعامل‌ها: {data['count']}\n"
+        f"🔗 لینک پروفایل: {profile}"
+    )
+    # Activity report is best-effort; its failure must not prevent the user's reply.
+    try:
+        send_message(OWNER_CHAT_ID, msg)
+    except Exception:
+        log.exception("Activity report failed")
 
-# ============================================================
-# 💕 روز آشنایی
-# ============================================================
-SECOND_QUOTES = [
-    "هر ثانیه‌ای که می‌گذرد، عشق من به تو عمیق‌تر می‌شود... ❤️",
-    "ثانیه‌ها می‌گذرند، اما عشق من به تو هرگز کهنه نمی‌شود... 🌹",
-    "در هر ثانیه‌ای از زندگی‌ام، تو را نفس می‌کشم... 💫",
-    "ثانیه‌های بی‌تو طولانی‌اند، اما کنار تو حتی ساعت‌ها هم کوتاه‌اند... ✨",
-    "هر ثانیه که می‌گذرد، یک دلیل تازه برای دوست داشتن تو پیدا می‌کنم... ❤️",
-    "ثانیه‌ها را بشمار، اما عشق را نه؛ چون عشق من به تو بی‌نهایت است... 🌸"
-]
+def meeting_seconds():
+    start = datetime.datetime(2026, 3, 15, tzinfo=IRAN_TZ)
+    return max(0, int((iran_now() - start).total_seconds()))
 
-MEETING_DATE = datetime.datetime(2026, 3, 15, 0, 0, 0, tzinfo=datetime.timezone(IRAN_OFFSET))
-
-def get_meeting_seconds():
-    now = get_current_iran_time()
-    if now < MEETING_DATE:
-        return 0
-    return int((now - MEETING_DATE).total_seconds())
-
-# ============================================================
-# 🎂 ساعت تا تولد
-# ============================================================
 def hours_until_birthday():
-    now = get_current_iran_time()
-    birth = datetime.datetime(
-        now.year, BIRTH_MONTH, BIRTH_DAY, BIRTH_HOUR, BIRTH_MINUTE,
-        tzinfo=datetime.timezone(IRAN_OFFSET)
-    )
-    if now >= birth:
-        birth = datetime.datetime(
-            now.year + 1, BIRTH_MONTH, BIRTH_DAY, BIRTH_HOUR, BIRTH_MINUTE,
-            tzinfo=datetime.timezone(IRAN_OFFSET)
-        )
-    diff = birth - now
-    return int(diff.total_seconds() // 3600)
+    now = iran_now()
+    target = datetime.datetime(now.year, BIRTH_MONTH, BIRTH_DAY,
+                               BIRTH_HOUR, BIRTH_MINUTE, tzinfo=IRAN_TZ)
+    if now >= target:
+        target = datetime.datetime(now.year + 1, BIRTH_MONTH, BIRTH_DAY,
+                                   BIRTH_HOUR, BIRTH_MINUTE, tzinfo=IRAN_TZ)
+    return int((target - now).total_seconds() // 3600)
 
-# ============================================================
-# ⌨️ منوی اصلی
-# ============================================================
-def get_main_keyboard(chat_id=None):
-    keyboard = [
-        ["📸 عکس‌ها"],
-        ["📅 روز آشنایی", "⏳ ساعت تا تولدت"],
-        ["💬 چت دوطرفه"]
-    ]
-
-    # 👑 منوی مخصوص مالک
-    if str(chat_id) == OWNER_CHAT_ID:
-        keyboard.append(["📊 وضعیت پارتنر"])
-
-    keyboard.append(["🔙 بازگشت به منو"])
-
-    return {
-        "keyboard": keyboard,
-        "resize_keyboard": True
-    }
-
-# ============================================================
-# 📸 منوی عکس
-# ============================================================
-def get_photo_keyboard():
-    return {
-        "keyboard": [
-            ["📸 عکس ۱", "📸 عکس ۲", "📸 عکس ۳"],
-            ["📸 عکس ۴", "📸 عکس ۵", "📸 عکس ۶"],
-            ["📸 عکس ۷", "📸 عکس جدید"],
-            ["🔙 بازگشت به منو"]
-        ],
-        "resize_keyboard": True
-    }
-
-# ============================================================
-# 🔐 منوی رمز
-# ============================================================
-def get_password_keyboard():
-    return {
-        "keyboard": [["🔙 بازگشت به منو"]],
-        "resize_keyboard": True
-    }
-
-# ============================================================
-# 💬 منوی چت دوطرفه
-# ============================================================
-def get_chat_keyboard():
-    return {
-        "keyboard": [
-            ["📤 ارسال پیام"],
-            ["📤 ارسال عکس", "📤 ارسال فیلم"],
-            ["📤 ارسال موزیک"],
-            ["🔙 بازگشت به منو"]
-        ],
-        "resize_keyboard": True
-    }
-
-# ============================================================
-# 📤 ارسال پیام تلگرام
-# ============================================================
-def send_message(chat_id, text, reply_markup=None, protect_content=True):
-    if not TOKEN:
-        print("❌ BOT_TOKEN تنظیم نشده است.")
+def send_chat_file(target_id, file_data, protect=True):
+    kind, fid = file_data.get("type"), file_data.get("file_id")
+    cap = file_data.get("caption", "")
+    if not fid:
         return False
-
-    url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
-
-    try:
-        payload = {
-            "chat_id": chat_id,
-            "text": text,
-            "protect_content": protect_content
-        }
-        if reply_markup:
-            payload["reply_markup"] = json.dumps(reply_markup, ensure_ascii=False)
-
-        response = requests.post(url, data=payload, timeout=15)
-        if response.status_code == 200:
-            return True
-        print("Telegram error:", response.status_code, response.text)
-    except Exception as e:
-        print("send_message error:", e)
-
+    ref = "file_id:" + fid
+    if kind == "photo": return send_photo(target_id, ref, cap, protect)
+    if kind == "video": return send_video(target_id, ref, cap, protect)
+    if kind == "audio":
+        return send_audio(target_id, ref, cap, file_data.get("title", "🎵"),
+                          file_data.get("performer", "❤️"), protect)
+    if kind == "document": return send_document(target_id, ref, cap, protect)
+    if kind == "voice": return send_voice(target_id, ref, cap, protect)
     return False
 
-# ============================================================
-# 📸 ارسال عکس
-# ============================================================
-def send_photo(chat_id, photo_data, caption="", protect_content=True):
-    if not TOKEN:
-        print("❌ BOT_TOKEN تنظیم نشده است.")
-        return False
-
-    try:
-        url = f"https://api.telegram.org/bot{TOKEN}/sendPhoto"
-
-        # لینک اینترنتی
-        if isinstance(photo_data, str) and photo_data.startswith("http"):
-            payload = {
-                "chat_id": chat_id,
-                "photo": photo_data,
-                "caption": caption,
-                "protect_content": protect_content
-            }
-            response = requests.post(url, data=payload, timeout=30)
-            return response.status_code == 200
-
-        # file_id
-        if isinstance(photo_data, str) and photo_data.startswith("file_id:"):
-            file_id = photo_data.replace("file_id:", "", 1)
-            payload = {
-                "chat_id": chat_id,
-                "photo": file_id,
-                "caption": caption,
-                "protect_content": protect_content
-            }
-            response = requests.post(url, data=payload, timeout=30)
-            return response.status_code == 200
-
-        # فایل محلی
-        if isinstance(photo_data, str) and os.path.exists(photo_data):
-            with open(photo_data, "rb") as photo:
-                files = {"photo": photo}
-                data = {
-                    "chat_id": chat_id,
-                    "caption": caption,
-                    "protect_content": protect_content
-                }
-                response = requests.post(url, data=data, files=files, timeout=60)
-            return response.status_code == 200
-
-        return False
-    except Exception as e:
-        print("send_photo error:", e)
-        return False
-
-# ============================================================
-# 🎥 ارسال فیلم
-# ============================================================
-def send_video(chat_id, video_data, caption="", protect_content=True):
-    if not TOKEN:
-        print("❌ BOT_TOKEN تنظیم نشده است.")
-        return False
-
-    try:
-        url = f"https://api.telegram.org/bot{TOKEN}/sendVideo"
-
-        if isinstance(video_data, str) and video_data.startswith("http"):
-            payload = {
-                "chat_id": chat_id,
-                "video": video_data,
-                "caption": caption,
-                "protect_content": protect_content
-            }
-            response = requests.post(url, data=payload, timeout=120)
-            return response.status_code == 200
-
-        if isinstance(video_data, str) and video_data.startswith("file_id:"):
-            file_id = video_data.replace("file_id:", "", 1)
-            payload = {
-                "chat_id": chat_id,
-                "video": file_id,
-                "caption": caption,
-                "protect_content": protect_content
-            }
-            response = requests.post(url, data=payload, timeout=120)
-            return response.status_code == 200
-
-        if isinstance(video_data, str) and os.path.exists(video_data):
-            with open(video_data, "rb") as video:
-                files = {"video": video}
-                data = {
-                    "chat_id": chat_id,
-                    "caption": caption,
-                    "protect_content": protect_content
-                }
-                response = requests.post(url, data=data, files=files, timeout=120)
-            return response.status_code == 200
-
-        return False
-    except Exception as e:
-        print("send_video error:", e)
-        return False
-
-# ============================================================
-# 🎵 ارسال موزیک
-# ============================================================
-def send_audio(chat_id, audio_data, caption="", title="", performer="", protect_content=True):
-    if not TOKEN:
-        print("❌ BOT_TOKEN تنظیم نشده است.")
-        return False
-
-    try:
-        url = f"https://api.telegram.org/bot{TOKEN}/sendAudio"
-
-        if isinstance(audio_data, str) and audio_data.startswith("http"):
-            payload = {
-                "chat_id": chat_id,
-                "audio": audio_data,
-                "caption": caption,
-                "protect_content": protect_content
-            }
-            if title:
-                payload["title"] = title
-            if performer:
-                payload["performer"] = performer
-            response = requests.post(url, data=payload, timeout=120)
-            return response.status_code == 200
-
-        if isinstance(audio_data, str) and audio_data.startswith("file_id:"):
-            file_id = audio_data.replace("file_id:", "", 1)
-            payload = {
-                "chat_id": chat_id,
-                "audio": file_id,
-                "caption": caption,
-                "protect_content": protect_content
-            }
-            if title:
-                payload["title"] = title
-            if performer:
-                payload["performer"] = performer
-            response = requests.post(url, data=payload, timeout=120)
-            return response.status_code == 200
-
-        if isinstance(audio_data, str) and os.path.exists(audio_data):
-            with open(audio_data, "rb") as audio:
-                files = {"audio": audio}
-                data = {
-                    "chat_id": chat_id,
-                    "caption": caption,
-                    "protect_content": protect_content
-                }
-                if title:
-                    data["title"] = title
-                if performer:
-                    data["performer"] = performer
-                response = requests.post(url, data=data, files=files, timeout=120)
-            return response.status_code == 200
-
-        return False
-    except Exception as e:
-        print("send_audio error:", e)
-        return False
-
-# ============================================================
-# 📎 ارسال Document
-# ============================================================
-def send_document(chat_id, document_data, caption="", protect_content=True):
-    if not TOKEN:
-        print("❌ BOT_TOKEN تنظیم نشده است.")
-        return False
-
-    try:
-        url = f"https://api.telegram.org/bot{TOKEN}/sendDocument"
-
-        if isinstance(document_data, str) and document_data.startswith("file_id:"):
-            file_id = document_data.replace("file_id:", "", 1)
-            payload = {
-                "chat_id": chat_id,
-                "document": file_id,
-                "caption": caption,
-                "protect_content": protect_content
-            }
-            response = requests.post(url, data=payload, timeout=120)
-            return response.status_code == 200
-
-        if isinstance(document_data, str) and document_data.startswith("http"):
-            payload = {
-                "chat_id": chat_id,
-                "document": document_data,
-                "caption": caption,
-                "protect_content": protect_content
-            }
-            response = requests.post(url, data=payload, timeout=120)
-            return response.status_code == 200
-
-        if isinstance(document_data, str) and os.path.exists(document_data):
-            with open(document_data, "rb") as document:
-                files = {"document": document}
-                data = {
-                    "chat_id": chat_id,
-                    "caption": caption,
-                    "protect_content": protect_content
-                }
-                response = requests.post(url, data=data, files=files, timeout=120)
-            return response.status_code == 200
-
-        return False
-    except Exception as e:
-        print("send_document error:", e)
-        return False
-
-# ============================================================
-# 🎤 ارسال Voice
-# ============================================================
-def send_voice(chat_id, voice_data, caption="", protect_content=True):
-    if not TOKEN:
-        print("❌ BOT_TOKEN تنظیم نشده است.")
-        return False
-
-    try:
-        url = f"https://api.telegram.org/bot{TOKEN}/sendVoice"
-
-        if isinstance(voice_data, str) and voice_data.startswith("file_id:"):
-            file_id = voice_data.replace("file_id:", "", 1)
-            payload = {
-                "chat_id": chat_id,
-                "voice": file_id,
-                "caption": caption,
-                "protect_content": protect_content
-            }
-            response = requests.post(url, data=payload, timeout=120)
-            return response.status_code == 200
-
-        if isinstance(voice_data, str) and voice_data.startswith("http"):
-            payload = {
-                "chat_id": chat_id,
-                "voice": voice_data,
-                "caption": caption,
-                "protect_content": protect_content
-            }
-            response = requests.post(url, data=payload, timeout=120)
-            return response.status_code == 200
-
-        return False
-    except Exception as e:
-        print("send_voice error:", e)
-        return False
-
-# ============================================================
-# 🎵 ارسال موزیک با file_id
-# ============================================================
-def send_audio_file_id(chat_id, file_id, caption="", title="🎵", performer="❤️", protect_content=True):
-    return send_audio(
-        chat_id,
-        f"file_id:{file_id}",
-        caption,
-        title,
-        performer,
-        protect_content
-    )
-
-# ============================================================
-# 📤 ارسال فایل در چت
-# ============================================================
-def send_chat_file(target_id, file_data, protect_content=True):
-    file_type = file_data.get("type")
-    file_id = file_data.get("file_id")
-    caption = file_data.get("caption", "")
-
-    if not file_id:
-        return False
-
-    if file_type == "photo":
-        return send_photo(target_id, f"file_id:{file_id}", caption, protect_content)
-
-    if file_type == "video":
-        return send_video(target_id, f"file_id:{file_id}", caption, protect_content)
-
-    if file_type == "audio":
-        title = file_data.get("title", "🎵")
-        performer = file_data.get("performer", "❤️")
-        return send_audio_file_id(target_id, file_id, caption, title, performer, protect_content)
-
-    if file_type == "document":
-        return send_document(target_id, f"file_id:{file_id}", caption, protect_content)
-
-    if file_type == "voice":
-        return send_voice(target_id, f"file_id:{file_id}", caption, protect_content)
-
-    return False
-
-# ============================================================
-# 🤖 پردازش پیام
-# ============================================================
 def request_access(user_id, first_name="", username=""):
     user_id = str(user_id)
     if user_id in AUTHORIZED_USERS:
         return
     PENDING_USERS[user_id] = {"first_name": first_name, "username": username}
     keyboard = {"inline_keyboard": [[
-        {"text": "✅ تایید", "callback_data": "approve_" + user_id},
-        {"text": "❌ رد", "callback_data": "reject_" + user_id}
+        {"text":"✅ تایید", "callback_data":"approve_" + user_id},
+        {"text":"❌ رد", "callback_data":"reject_" + user_id}
     ]]}
-    send_message(OWNER_CHAT_ID, f"🚨 درخواست ورود جدید\n\n👤 نام: {first_name}\n🆔 آیدی: {user_id}\n👤 یوزرنیم: @{username if username else 'ندارد'}\n\nبعد از تایید، رمز ورود را برای همین کاربر ارسال کن.", keyboard)
+    send_message(OWNER_CHAT_ID,
+        f"🚨 درخواست ورود جدید\n👤 نام: {first_name}\n🆔 آیدی: {user_id}\n"
+        f"👤 یوزرنیم: @{username or 'ندارد'}\nپس از تایید، رمز ورود را ارسال کن.", keyboard)
 
 def generate_login_password(user_id):
     pwd = str(random.randint(100000, 999999))
     LOGIN_PASSWORDS[str(user_id)] = pwd
     return pwd
 
-def handle_message(chat_id, text, file_data=None):
-    chat_id = str(chat_id)
-    text = (text or "").strip()
+SECOND_QUOTES = [
+    "هر ثانیه‌ای که می‌گذرد، عشق من به تو عمیق‌تر می‌شود... ❤️",
+    "ثانیه‌ها می‌گذرند، اما عشق من به تو هرگز کهنه نمی‌شود... 🌹",
+    "در هر ثانیه‌ای از زندگی‌ام، تو را نفس می‌کشم... 💫",
+    "هر ثانیه که می‌گذرد، یک دلیل تازه برای دوست داشتن تو پیدا می‌کنم... ❤️"
+]
 
-    # 🔐 جلوگیری از ورود افراد تایید نشده
+def handle_message(chat_id, text, file_data=None):
+    chat_id, text = str(chat_id), (text or "").strip()
+    log.info("handle_message entered: chat=%s text=%r file=%s",
+             chat_id, text[:100], (file_data or {}).get("type"))
+
     if chat_id not in AUTHORIZED_USERS:
         user = user_access.setdefault(chat_id, {"login_ok": False})
         if text == "/start":
             request_access(chat_id)
-            send_message(chat_id, "⏳ درخواست ورود شما برای صاحب ربات ارسال شد. پس از تایید، رمز ورود دریافت می‌کنید.")
+            send_message(chat_id, "⏳ درخواست ورود شما برای صاحب ربات ارسال شد.")
             return
-        if not user.get("login_ok", False):
+        if not user.get("login_ok"):
             if LOGIN_PASSWORDS.get(chat_id) and text == LOGIN_PASSWORDS[chat_id]:
                 user["login_ok"] = True
-                send_message(chat_id, "✅ رمز صحیح است. ورود شما تایید شد.", get_main_keyboard(chat_id))
+                send_message(chat_id, "✅ رمز صحیح است.", get_main_keyboard(chat_id))
             else:
                 send_message(chat_id, "🔒 ابتدا باید توسط صاحب ربات تایید شوید.")
             return
 
-    # 🚫 ربات غیرفعال
     if not BOT_ACTIVE and chat_id != OWNER_CHAT_ID:
         send_message(chat_id, "🔒 ربات غیرفعال شده است.")
         return
 
-    # 👤 ساخت اطلاعات کاربر
-    user_access.setdefault(chat_id, {
-        "photos": False,
-        "waiting_for_password": False,
-        "waiting_for_chat_message": False,
-        "waiting_for_file": False,
-        "mode": None,
-        "chat_target": None
+    user = user_access.setdefault(chat_id, {
+        "photos": False, "waiting_for_password": False,
+        "waiting_for_chat_message": False, "waiting_for_file": False,
+        "mode": None, "chat_target": None
     })
-    user = user_access[chat_id]
 
-    # 🔙 بازگشت به منو
     if text == "🔙 بازگشت به منو":
-        photos_access = user.get("photos", False)
+        keep_photos = user.get("photos", False)
         user_access[chat_id] = {
-            "photos": photos_access,
-            "waiting_for_password": False,
-            "waiting_for_chat_message": False,
-            "waiting_for_file": False,
-            "mode": None,
-            "chat_target": None
+            "photos": keep_photos, "waiting_for_password": False,
+            "waiting_for_chat_message": False, "waiting_for_file": False,
+            "mode": None, "chat_target": None
         }
-        send_message(
-            chat_id,
-            "🏠 برگشتیم به منوی اصلی...\n\n🌻 هر چیزی که بخوای اینجاست ❤️",
-            get_main_keyboard(chat_id)
-        )
-        return
+        send_message(chat_id, "🏠 برگشتیم به منوی اصلی ❤️", get_main_keyboard(chat_id)); return
 
-    # /start
     if text == "/start":
         user_access[chat_id] = {
-            "photos": False,
-            "waiting_for_password": False,
-            "waiting_for_chat_message": False,
-            "waiting_for_file": False,
-            "mode": None,
-            "chat_target": None
+            "photos": False, "waiting_for_password": False,
+            "waiting_for_chat_message": False, "waiting_for_file": False,
+            "mode": None, "chat_target": None
         }
-        send_message(
-            chat_id,
-            """🌻❤️ به دنیای ahu goozlum خوش اومدی ❤️🌻
+        send_message(chat_id,
+            "🌻❤️ به دنیای ahu goozlum خوش اومدی ❤️🌻\n\n"
+            "📸 عکس‌های خصوصی\n📅 روز آشنایی\n⏳ شمارش معکوس تولد\n💬 چت دوطرفه",
+            get_main_keyboard(chat_id)); return
 
-🎁 اینجا یک گوشه کوچیک از قلب منه...
-
-📸 عکس‌های خصوصی
-📅 روز آشنایی
-⏳ شمارش معکوس تولد
-💬 چت دوطرفه
-
-🌻 هر دکمه یک تکه از داستان ماست...""",
-            get_main_keyboard(chat_id)
-        )
-        return
-
-    # 💬 چت دوطرفه
     if text == "💬 چت دوطرفه":
-        if chat_id != OWNER_CHAT_ID and chat_id != PARTNER_CHAT_ID:
-            send_message(
-                chat_id,
-                "❌ این بخش فقط برای مالک و پارتنر است.",
-                get_main_keyboard(chat_id)
-            )
-            return
+        if chat_id not in (OWNER_CHAT_ID, PARTNER_CHAT_ID):
+            send_message(chat_id, "❌ این بخش فقط برای مالک و پارتنر است.", get_main_keyboard(chat_id)); return
+        user.update(mode="partner_chat", waiting_for_chat_message=False, waiting_for_file=False)
+        send_message(chat_id, "💬 چت دوطرفه باز شد ❤️\nپیام، عکس، فیلم، موزیک، فایل یا ویس بفرست.",
+                     get_chat_keyboard()); return
 
-        user["mode"] = "partner_chat"
-        user["waiting_for_chat_message"] = False
-        user["waiting_for_file"] = False
+    if text in ("📤 ارسال پیام", "📤 ارسال عکس", "📤 ارسال فیلم", "📤 ارسال موزیک"):
+        if user.get("mode") != "partner_chat":
+            send_message(chat_id, "ابتدا وارد بخش چت دوطرفه شو.", get_main_keyboard(chat_id)); return
+        user["chat_target"] = "partner"
+        user["waiting_for_chat_message"] = (text == "📤 ارسال پیام")
+        user["waiting_for_file"] = {"📤 ارسال عکس":"photo", "📤 ارسال فیلم":"video",
+                                    "📤 ارسال موزیک":"audio"}.get(text, False)
+        prompts = {"📤 ارسال پیام":"💬 پیامت رو بنویس:",
+                   "📤 ارسال عکس":"📸 عکس رو همینجا بفرست:",
+                   "📤 ارسال فیلم":"🎥 فیلم رو همینجا بفرست:",
+                   "📤 ارسال موزیک":"🎵 موزیک یا MP3 رو همینجا بفرست:"}
+        send_message(chat_id, prompts[text], get_chat_keyboard()); return
 
-        send_message(
-            chat_id,
-            """💬 چت دوطرفه باز شد ❤️
-
-از اینجا می‌تونی برای طرف مقابل بفرستی:
-
-💬 پیام
-📸 عکس
-🎥 فیلم
-🎵 موزیک / MP3
-📎 فایل
-🎤 ویس
-
-فایل رو مستقیم همینجا بفرست.""",
-            get_chat_keyboard()
-        )
-        return
-
-    # 📤 ارسال پیام در چت
-    if text == "📤 ارسال پیام":
-        if user.get("mode") == "partner_chat":
-            user["waiting_for_chat_message"] = True
-            user["waiting_for_file"] = False
-            user["chat_target"] = "partner"
-            send_message(
-                chat_id,
-                "💬 پیامت رو برای طرف مقابل بنویس:",
-                get_chat_keyboard()
-            )
-        return
-
-    # 📤 ارسال عکس در چت
-    if text == "📤 ارسال عکس":
-        if user.get("mode") == "partner_chat":
-            user["waiting_for_file"] = "photo"
-            user["waiting_for_chat_message"] = False
-            user["chat_target"] = "partner"
-            send_message(
-                chat_id,
-                "📸 عکس رو همینجا بفرست:",
-                get_chat_keyboard()
-            )
-        return
-
-    # 📤 ارسال فیلم در چت
-    if text == "📤 ارسال فیلم":
-        if user.get("mode") == "partner_chat":
-            user["waiting_for_file"] = "video"
-            user["waiting_for_chat_message"] = False
-            user["chat_target"] = "partner"
-            send_message(
-                chat_id,
-                "🎥 فیلم رو همینجا بفرست:",
-                get_chat_keyboard()
-            )
-        return
-
-    # 📤 ارسال موزیک در چت
-    if text == "📤 ارسال موزیک":
-        if user.get("mode") == "partner_chat":
-            user["waiting_for_file"] = "audio"
-            user["waiting_for_chat_message"] = False
-            user["chat_target"] = "partner"
-            send_message(
-                chat_id,
-                """🎵 موزیک رو همینجا بفرست.
-
-برای MP3 می‌تونی:
-📎 Attach → Music
-یا
-📎 Attach → File
-رو انتخاب کنی.
-
-ربات هر دو حالت رو تشخیص میده. ❤️""",
-                get_chat_keyboard()
-            )
-        return
-
-    # 📥 پردازش فایل‌ها
     if file_data:
-        file_type = file_data.get("type")
-        target = user.get("chat_target", "partner")
-
-        if target == "partner":
-            if chat_id == OWNER_CHAT_ID:
-                target_id = PARTNER_CHAT_ID
-            elif chat_id == PARTNER_CHAT_ID:
-                target_id = OWNER_CHAT_ID
-            else:
-                send_message(chat_id, "❌ شما اجازه استفاده از چت دوطرفه را ندارید.")
-                return
+        if chat_id == OWNER_CHAT_ID: target_id = PARTNER_CHAT_ID
+        elif chat_id == PARTNER_CHAT_ID: target_id = OWNER_CHAT_ID
         else:
-            target_id = PARTNER_CHAT_ID
-
-        # مالک → پارتنر = محافظت‌شده
-        protect_for_recipient = (chat_id == OWNER_CHAT_ID and target_id == PARTNER_CHAT_ID)
-
-        success = send_chat_file(target_id, file_data, protect_for_recipient)
-
-        if success:
-            if file_type == "photo":
-                success_text = "✅ عکس با موفقیت ارسال شد! 📸"
-            elif file_type == "video":
-                success_text = "✅ فیلم با موفقیت ارسال شد! 🎥"
-            elif file_type == "audio":
-                success_text = "✅ موزیک / MP3 با موفقیت ارسال شد! 🎵"
-            elif file_type == "document":
-                success_text = "✅ فایل با موفقیت ارسال شد! 📎"
-            elif file_type == "voice":
-                success_text = "✅ ویس با موفقیت ارسال شد! 🎤"
-            else:
-                success_text = "✅ فایل ارسال شد! ❤️"
-
-            if protect_for_recipient:
-                success_text += "\n\n🔐 نسخه‌ای که برای پارتنر ارسال شد محافظت‌شده است."
-
-            send_message(chat_id, success_text, get_chat_keyboard())
-        else:
-            send_message(
-                chat_id,
-                """❌ ارسال فایل ناموفق بود.
-
-اگر موزیک است، مطمئن شو فایل به‌صورت MP3 یا فایل صوتی ارسال شده باشد.""",
-                get_chat_keyboard()
-            )
-
+            send_message(chat_id, "❌ اجازه استفاده از چت دوطرفه را نداری."); return
+        protect = (chat_id == OWNER_CHAT_ID and target_id == PARTNER_CHAT_ID)
+        if user.get("mode") != "partner_chat" or not user.get("waiting_for_file"):
+            send_message(chat_id, "برای ارسال فایل، ابتدا وارد چت دوطرفه شو و نوع فایل را انتخاب کن.", get_chat_keyboard()); return
+        ok = send_chat_file(target_id, file_data, protect)
+        send_message(chat_id, "✅ فایل با موفقیت ارسال شد ❤️" if ok else
+                     "❌ ارسال فایل ناموفق بود؛ جزئیات خطا در لاگ Render ثبت شده است.",
+                     get_chat_keyboard())
         user["waiting_for_file"] = False
         return
 
-    # 💬 ارسال پیام متنی
-    if user.get("waiting_for_chat_message", False):
-        target = user.get("chat_target", "partner")
-
-        if target == "partner":
-            if chat_id == OWNER_CHAT_ID:
-                target_id = PARTNER_CHAT_ID
-                sender_name = "عشقت"
-            elif chat_id == PARTNER_CHAT_ID:
-                target_id = OWNER_CHAT_ID
-                sender_name = "پارتنرت"
-            else:
-                send_message(chat_id, "❌ اجازه ارسال پیام نداری.")
-                return
-
-        if text:
-            success = send_message(target_id, f"💬 پیام از {sender_name}:\n\n{text}")
-
-            if success:
-                send_message(chat_id, "✅ پیام ارسال شد! ❤️", get_chat_keyboard())
-            else:
-                send_message(chat_id, "❌ ارسال پیام ناموفق بود.")
-
+    if user.get("waiting_for_chat_message"):
+        if chat_id == OWNER_CHAT_ID:
+            target_id, sender = PARTNER_CHAT_ID, "عشقت"
+        elif chat_id == PARTNER_CHAT_ID:
+            target_id, sender = OWNER_CHAT_ID, "پارتنرت"
+        else:
+            send_message(chat_id, "❌ اجازه ارسال پیام نداری."); return
+        ok = send_message(target_id, f"💬 پیام از {sender}:\n\n{text}") if text else False
+        send_message(chat_id, "✅ پیام ارسال شد! ❤️" if ok else "❌ ارسال پیام ناموفق بود.")
         user["waiting_for_chat_message"] = False
         return
 
-    # 📊 وضعیت پارتنر
     if text == "📊 وضعیت پارتنر":
         if chat_id != OWNER_CHAT_ID:
-            send_message(chat_id, "❌ دسترسی ندارید.")
-            return
-
-        if not PARTNER_ACTIVITY:
-            send_message(chat_id, "❌ هنوز هیچ تعاملی ثبت نشده است.")
-            return
-
-        partner_id = (
-            PARTNER_CHAT_ID if PARTNER_CHAT_ID in PARTNER_ACTIVITY
-            else list(PARTNER_ACTIVITY.keys())[0]
-        )
-        data = PARTNER_ACTIVITY[partner_id]
-        last_seen = data["last_seen"]
-        first_seen = data["first_seen"]
-        now = get_current_iran_time()
-        diff = (now - last_seen).total_seconds()
-
+            send_message(chat_id, "❌ دسترسی ندارید."); return
+        d = PARTNER_ACTIVITY.get(PARTNER_CHAT_ID)
+        if not d:
+            send_message(chat_id, "❌ هنوز تعاملی ثبت نشده است.", get_main_keyboard(chat_id)); return
+        diff = (iran_now() - d["last_seen"]).total_seconds()
         status = "🟢 اخیراً فعال بوده" if diff < 300 else "🔴 بیش از ۵ دقیقه تعامل نداشته"
+        send_message(chat_id,
+            f"📊 وضعیت پارتنر\n👤 نام: {d['first_name'] or 'نامشخص'}\n"
+            f"📅 اولین تعامل: {d['first_seen']:%Y/%m/%d %H:%M:%S}\n"
+            f"📅 آخرین تعامل: {d['last_seen']:%Y/%m/%d %H:%M:%S}\n"
+            f"🔢 تعداد تعامل‌ها: {d['count']}\n📌 آخرین اقدام: {d['last_action']}\n❤️ {status}",
+            get_main_keyboard(chat_id)); return
 
-        username = data.get("username")
-        username_text = "@" + username if username else "ندارد"
-
-        message = f"""
-📊 وضعیت پارتنر
-👤 اطلاعات:
-
-• آیدی: {partner_id}
-• نام: {data.get('first_name') or 'نامشخص'}
-• نام خانوادگی: {data.get('last_name') or 'نامشخص'}
-• یوزرنیم: {username_text}
-
-📅 اولین تعامل: {first_seen.strftime('%Y/%m/%d - %H:%M:%S')}
-📅 آخرین تعامل: {last_seen.strftime('%Y/%m/%d - %H:%M:%S')}
-
-🔢 تعداد تعامل‌ها: {data['count']}
-📌 آخرین اقدام: {data.get('last_action', 'نامشخص')}
-❤️ وضعیت: {status}
-"""
-        send_message(chat_id, message, get_main_keyboard(chat_id))
-        return
-
-    # 🔐 بررسی رمز
-    if user.get("waiting_for_password", False):
+    if user.get("waiting_for_password"):
         if text == PASSWORD:
             user["photos"] = True
             user["waiting_for_password"] = False
-            send_message(
-                chat_id,
-                "✅ رمز درست بود!\n\n🔓 گالری باز شد ❤️",
-                get_photo_keyboard()
-            )
+            send_message(chat_id, "✅ رمز درست بود! گالری باز شد ❤️", get_photo_keyboard())
         else:
-            send_message(
-                chat_id,
-                "❌ رمز اشتباهه!\n\nدوباره امتحان کن ❤️",
-                get_password_keyboard()
-            )
+            send_message(chat_id, "❌ رمز اشتباهه! دوباره امتحان کن ❤️", get_password_keyboard())
         return
 
-    # 📸 انتخاب عکس
-    if text in PHOTOS:
-        if user.get("photos", False):
-            photo = PHOTOS[text]
-            success = send_photo(chat_id, photo["path"], photo["caption"])
-            if not success:
-                send_message(chat_id, "❌ ارسال عکس ناموفق بود.")
-        else:
-            user["waiting_for_password"] = True
-            send_message(
-                chat_id,
-                "🔐 این قسمت خصوصی است.\n\nلطفاً رمز مخصوص رو وارد کن ❤️",
-                get_password_keyboard()
-            )
-        return
-
-    # 📸 گالری
     if text == "📸 عکس‌ها":
-        if user.get("photos", False):
-            send_message(
-                chat_id,
-                "📸 کدوم عکس رو می‌خوای ببینی؟ ❤️",
-                get_photo_keyboard()
-            )
+        if user.get("photos"):
+            send_message(chat_id, "📸 کدوم عکس رو می‌خوای ببینی؟ ❤️", get_photo_keyboard())
         else:
             user["waiting_for_password"] = True
-            send_message(
-                chat_id,
-                "🔐 برای ورود به گالری\nرمز مخصوص رو وارد کن ❤️",
-                get_password_keyboard()
-            )
+            send_message(chat_id, "🔐 برای ورود به گالری رمز مخصوص رو وارد کن ❤️", get_password_keyboard())
         return
 
-    # 📅 روز آشنایی
+    if text in PHOTOS:
+        if not user.get("photos"):
+            user["waiting_for_password"] = True
+            send_message(chat_id, "🔐 این قسمت خصوصی است. رمز مخصوص رو وارد کن ❤️", get_password_keyboard())
+        else:
+            item = PHOTOS[text]
+            if not send_photo(chat_id, item["path"], item["caption"]):
+                send_message(chat_id, "❌ ارسال عکس ناموفق بود؛ خطای آن در لاگ ثبت شده است.")
+        return
+
     if text == "📅 روز آشنایی":
-        seconds = get_meeting_seconds()
+        seconds = meeting_seconds()
         days = seconds // 86400
-        quote = random.choice(SECOND_QUOTES)
-
-        message = f"""
-💞 روز آشنایی ما ❤️
-📅 ۲۴ اسفند ۱۴۰۴
-
-از روزی که وارد زندگی من شدی، تا امروز، هر ثانیه برای من یک خاطره‌ی قشنگه.
-
-🌻 {days} روز از قشنگ‌ترین فصل زندگی من گذشته.
-⏱️ {seconds:,} ثانیه...
-
-{seconds:,} ثانیه‌ای که قلبم برای تو تپیده است. ❤️
-
-📖 {quote}
-
-❤️ از روز آشنایی‌مان تا همیشه... تو یکی از زیباترین اتفاق‌های زندگی منی.
-"""
-        send_message(chat_id, message)
+        send_message(chat_id,
+            f"💞 روز آشنایی ما ❤️\n📅 ۲۴ اسفند ۱۴۰۴\n\n"
+            f"🌻 {days} روز از قشنگ‌ترین فصل زندگی من گذشته.\n"
+            f"⏱️ {seconds:,} ثانیه...\n\n{random.choice(SECOND_QUOTES)}")
         return
 
-    # ⏳ تولد
     if text == "⏳ ساعت تا تولدت":
-        hours = hours_until_birthday()
-        send_message(
-            chat_id,
-            f"""🎂 شمارش معکوس برای روز قشنگ تو...
-
-🌻 تولد ahu goozlum
-
-⏳ فقط {hours:,} ساعت دیگه مونده...
-
-هر ساعتی که می‌گذره، من یک قدم به روزی نزدیک‌تر می‌شم که دنیا قشنگ‌تر شد؛ روزی که تو به دنیا اومدی. ❤️🌻"""
-        )
+        send_message(chat_id,
+            f"🎂 شمارش معکوس برای تولد ahu goozlum\n\n⏳ فقط {hours_until_birthday():,} ساعت مونده ❤️")
         return
 
-    # ❌ دستور ناشناخته
-    send_message(
-        chat_id,
-        "❌ این دستور رو نمی‌شناسم.\n\nاز دکمه‌های پایین استفاده کن ❤️",
-        get_main_keyboard(chat_id)
-    )
+    send_message(chat_id, "❌ این دستور رو نمی‌شناسم.\nاز دکمه‌های پایین استفاده کن ❤️",
+                 get_main_keyboard(chat_id))
 
-# ============================================================
-# 🎂 پیام تولد
-# ============================================================
 BIRTHDAY_MESSAGE = """🎂 تولدت مبارک، ahu goozlum... ❤️
 
 امروز فقط یک روز معمولی نیست...
@@ -1017,264 +417,149 @@ BIRTHDAY_MESSAGE = """🎂 تولدت مبارک، ahu goozlum... ❤️
 🎂 تولدت مبارک عشق من... 🌻
 همیشه بخند ❤️ چون لبخندت زیباترین چیز دنیاست."""
 
-# ============================================================
-# 🎂 تایمر تولد
-# ============================================================
 def birthday_timer():
-    sent_today = False
+    sent_date = None
     while True:
         try:
-            now = get_current_iran_time()
-
-            if (now.month == BIRTH_MONTH and now.day == BIRTH_DAY
-                    and now.hour == BIRTH_HOUR and now.minute == BIRTH_MINUTE):
-                if not sent_today:
-                    print("🎂 ارسال پیام تولد...")
-
+            now = iran_now()
+            if (now.month, now.day, now.hour, now.minute) == (BIRTH_MONTH, BIRTH_DAY, BIRTH_HOUR, BIRTH_MINUTE):
+                today = now.date()
+                if sent_date != today:
+                    log.info("Birthday message sending...")
                     send_message(OWNER_CHAT_ID, BIRTHDAY_MESSAGE)
                     send_message(PARTNER_CHAT_ID, BIRTHDAY_MESSAGE)
+                    item = PHOTOS["📸 عکس ۱"]
+                    if os.path.isfile(item["path"]):
+                        send_photo(OWNER_CHAT_ID, item["path"], item["caption"])
+                        send_photo(PARTNER_CHAT_ID, item["path"], item["caption"])
+                    sent_date = today
+        except Exception:
+            log.exception("birthday_timer failed")
+        time.sleep(20)
 
-                    photo = PHOTOS["📸 عکس ۱"]
-                    if os.path.exists(photo["path"]):
-                        send_photo(OWNER_CHAT_ID, photo["path"], photo["caption"])
-                        send_photo(PARTNER_CHAT_ID, photo["path"], photo["caption"])
+def extract_file(message):
+    caption = message.get("caption", "")
+    if message.get("photo"):
+        return {"type":"photo", "file_id":message["photo"][-1]["file_id"], "caption":caption}
+    if message.get("video"):
+        return {"type":"video", "file_id":message["video"]["file_id"], "caption":caption}
+    if message.get("audio"):
+        a = message["audio"]
+        return {"type":"audio", "file_id":a["file_id"], "caption":caption,
+                "title":a.get("title") or "🎵", "performer":a.get("performer") or "❤️"}
+    if message.get("voice"):
+        return {"type":"voice", "file_id":message["voice"]["file_id"], "caption":caption}
+    if message.get("document"):
+        d = message["document"]
+        mime, name = d.get("mime_type","").lower(), d.get("file_name","").lower()
+        if mime.startswith("image/") or name.endswith((".jpg",".jpeg",".png",".webp",".gif")):
+            kind = "photo"
+        elif mime.startswith("video/") or name.endswith((".mp4",".mov",".mkv",".avi",".webm")):
+            kind = "video"
+        elif mime.startswith("audio/") or name.endswith((".mp3",".m4a",".aac",".ogg",".wav",".flac")):
+            kind = "audio"
+        else:
+            kind = "document"
+        return {"type":kind, "file_id":d["file_id"], "caption":caption,
+                "title":name or "🎵", "performer":"❤️"}
+    return None
 
-                    sent_today = True
-                    print("✅ پیام تولد ارسال شد.")
-            else:
-                sent_today = False
-        except Exception as e:
-            print("birthday_timer error:", e)
-
-        time.sleep(30)
-
-# ============================================================
-# 🌐 Webhook
-# ============================================================
 @app.route("/", methods=["GET", "POST"])
 def webhook():
-    if request.method == "POST":
-        try:
-            data = request.get_json(silent=True)
-            if not data:
+    if request.method == "GET":
+        return "Ahu bot is running", 200
+    try:
+        data = request.get_json(silent=True)
+        if not isinstance(data, dict):
+            log.warning("Webhook received invalid/empty JSON")
+            return "OK", 200
+
+        if "message" in data:
+            message = data["message"]
+            chat = message.get("chat", {})
+            chat_id = str(chat.get("id", ""))
+            if not chat_id:
+                log.error("Webhook message has no chat id")
                 return "OK", 200
+            text = message.get("text", "")
+            file_data = extract_file(message)
+            log.info("WEBHOOK IN: chat=%s text=%r file=%s update_id=%s",
+                     chat_id, text[:100], (file_data or {}).get("type"), data.get("update_id"))
 
-            if "message" in data:
-                message = data["message"]
-                chat = message["chat"]
-                chat_id = str(chat["id"])
+            if text == "/start":
+                action = "🚀 کاربر /start زد"
+            elif text:
+                action = "🖱️ پیام/دکمه: " + text[:150]
+            elif file_data:
+                action = "📎 فایل: " + file_data["type"]
+            else:
+                action = "💬 Update بدون متن"
 
-                text = message.get("text", "")
-                caption = message.get("caption", "")
-
-                file_data = None
-
-                if "photo" in message:
-                    photo = message["photo"][-1]
-                    file_data = {
-                        "type": "photo",
-                        "file_id": photo["file_id"],
-                        "caption": caption
-                    }
-
-                elif "video" in message:
-                    video = message["video"]
-                    file_data = {
-                        "type": "video",
-                        "file_id": video["file_id"],
-                        "caption": caption
-                    }
-
-                elif "audio" in message:
-                    audio = message["audio"]
-                    file_data = {
-                        "type": "audio",
-                        "file_id": audio["file_id"],
-                        "caption": caption,
-                        "title": audio.get("title", "🎵"),
-                        "performer": audio.get("performer", "❤️")
-                    }
-
-                elif "voice" in message:
-                    voice = message["voice"]
-                    file_data = {
-                        "type": "voice",
-                        "file_id": voice["file_id"],
-                        "caption": caption
-                    }
-
-                elif "document" in message:
-                    doc = message["document"]
-                    mime = doc.get("mime_type", "").lower()
-                    file_name = doc.get("file_name", "").lower()
-
-                    if (mime.startswith("image/")
-                            or file_name.endswith((".jpg", ".jpeg", ".png", ".webp", ".gif"))):
-                        file_data = {
-                            "type": "photo",
-                            "file_id": doc["file_id"],
-                            "caption": caption
-                        }
-                    elif (mime.startswith("video/")
-                            or file_name.endswith((".mp4", ".mov", ".mkv", ".avi", ".webm"))):
-                        file_data = {
-                            "type": "video",
-                            "file_id": doc["file_id"],
-                            "caption": caption
-                        }
-                    elif (mime.startswith("audio/")
-                            or file_name.endswith((".mp3", ".m4a", ".aac", ".ogg", ".wav", ".flac"))):
-                        file_data = {
-                            "type": "audio",
-                            "file_id": doc["file_id"],
-                            "caption": caption,
-                            "title": file_name or "🎵",
-                            "performer": "❤️"
-                        }
-                    else:
-                        file_data = {
-                            "type": "document",
-                            "file_id": doc["file_id"],
-                            "caption": caption,
-                            "file_name": doc.get("file_name", "")
-                        }
-
-                first_name = chat.get("first_name", "")
-                last_name = chat.get("last_name", "")
-                username = chat.get("username", "")
-
-                contact = message.get("contact")
-                phone_number = ""
-                if contact:
-                    phone_number = contact.get("phone_number", "")
-
-                if text == "/start":
-                    action = "🚀 کاربر /start زد"
-                elif text:
-                    action = "🖱️ کاربر دکمه/پیام فرستاد:\n" + text
-                elif file_data:
-                    if file_data["type"] == "photo":
-                        action = "📸 کاربر عکس ارسال کرد"
-                    elif file_data["type"] == "video":
-                        action = "🎥 کاربر فیلم ارسال کرد"
-                    elif file_data["type"] == "audio":
-                        action = "🎵 کاربر موزیک/MP3 ارسال کرد"
-                    elif file_data["type"] == "voice":
-                        action = "🎤 کاربر ویس ارسال کرد"
-                    elif file_data["type"] == "document":
-                        action = "📎 کاربر فایل ارسال کرد"
-                    else:
-                        action = "📎 کاربر فایل ارسال کرد"
-                else:
-                    action = "💬 کاربر یک Update بدون متن فرستاد"
-
-                report_user_interaction(
-                    chat_id, action,
-                    first_name, last_name, username, phone_number
-                )
-
+            # Process the user's message first; report failure must not block the reply.
+            try:
                 handle_message(chat_id, text, file_data)
+            except Exception:
+                log.exception("handle_message crashed for chat=%s", chat_id)
 
-            elif "callback_query" in data:
-                callback = data["callback_query"]
-                from_user = callback["from"]
-                chat_id = str(from_user["id"])
-                callback_data = callback.get("data", "")
+            if chat_id != OWNER_CHAT_ID:
+                try:
+                    report_user_interaction(chat_id, action,
+                        chat.get("first_name",""), chat.get("last_name",""),
+                        chat.get("username",""),
+                        (message.get("contact") or {}).get("phone_number",""))
+                except Exception:
+                    log.exception("report_user_interaction crashed for chat=%s", chat_id)
 
-                if chat_id == OWNER_CHAT_ID:
-                    if callback_data.startswith("approve_"):
-                        uid = callback_data.replace("approve_", "", 1)
-                        AUTHORIZED_USERS.add(uid)
-                        pwd = generate_login_password(uid)
-                        send_message(uid, "✅ درخواست ورود شما تایید شد.\n\n🔑 رمز ورود شما: " + pwd)
-                        send_message(OWNER_CHAT_ID, "✅ کاربر تایید شد و رمز ارسال شد.")
-                    elif callback_data.startswith("reject_"):
-                        uid = callback_data.replace("reject_", "", 1)
-                        PENDING_USERS.pop(uid, None)
-                        send_message(uid, "❌ درخواست ورود شما رد شد.")
-                        send_message(OWNER_CHAT_ID, "❌ کاربر رد شد.")
+        elif "callback_query" in data:
+            callback = data["callback_query"]
+            from_user = callback.get("from", {})
+            chat_id = str(from_user.get("id", ""))
+            cb = callback.get("data", "")
+            log.info("CALLBACK IN: chat=%s data=%s", chat_id, cb)
+            if chat_id == OWNER_CHAT_ID:
+                if cb.startswith("approve_"):
+                    uid = cb.split("_", 1)[1]
+                    AUTHORIZED_USERS.add(uid)
+                    pwd = generate_login_password(uid)
+                    send_message(uid, "✅ درخواست ورود تایید شد.\n🔑 رمز ورود: " + pwd)
+                    send_message(OWNER_CHAT_ID, "✅ کاربر تایید شد و رمز ارسال شد.")
+                elif cb.startswith("reject_"):
+                    uid = cb.split("_", 1)[1]
+                    PENDING_USERS.pop(uid, None)
+                    send_message(uid, "❌ درخواست ورود رد شد.")
+                    send_message(OWNER_CHAT_ID, "❌ کاربر رد شد.")
+            # Acknowledge callback spinner
+            if callback.get("id"):
+                api_call("answerCallbackQuery", data={"callback_query_id": callback["id"]})
 
+        elif "edited_message" in data:
+            edited = data["edited_message"]
+            chat = edited.get("chat", {})
+            cid = str(chat.get("id", ""))
+            if cid and cid != OWNER_CHAT_ID:
+                report_user_interaction(cid, "✏️ پیام ویرایش شد",
+                    chat.get("first_name",""), chat.get("last_name",""), chat.get("username",""))
 
-            elif "edited_message" in data:
-                edited = data["edited_message"]
-                chat = edited["chat"]
-                chat_id = str(chat["id"])
+        else:
+            log.info("Webhook update type not handled: %s", list(data.keys()))
 
-                report_user_interaction(
-                    chat_id,
-                    "✏️ پیام ویرایش شد",
-                    chat.get("first_name", ""),
-                    chat.get("last_name", ""),
-                    chat.get("username", ""),
-                    ""
-                )
-
-        except Exception as e:
-            print("Webhook error:", e)
-
+    except Exception:
+        log.exception("WEBHOOK TOP-LEVEL ERROR")
     return "OK", 200
 
-# ============================================================
-# 🩺 Health
-# ============================================================
 @app.route("/health", methods=["GET"])
 def health():
     return jsonify({
-        "status": "ok",
-        "service": "rose-bot",
-        "owner": OWNER_CHAT_ID,
-        "partner": PARTNER_CHAT_ID,
-        "chat": "enabled",
-        "audio": "enabled",
-        "mp3": "enabled",
-        "protected_media": "enabled",
-        "documents": "enabled",
-        "voice": "enabled"
+        "status":"ok", "service":"rose-bot",
+        "token_configured":bool(TOKEN),
+        "chat":"enabled", "audio":"enabled", "mp3":"enabled",
+        "protected_media":"enabled", "documents":"enabled", "voice":"enabled"
     })
 
-# ============================================================
-# 🚀 اجرای برنامه
-# ============================================================
 if __name__ == "__main__":
-    print("🚀 ربات ahu goozlum روشن شد...")
-    print(f"👑 مالک جدید: {OWNER_CHAT_ID}")
-    print(f"❤️ پارتنر: {PARTNER_CHAT_ID}")
-    print(f"🎂 تولد: {BIRTH_DAY}/{BIRTH_MONTH}")
-    print(f"📸 تعداد عکس‌ها: {len(PHOTOS)}")
-    print("🩺 مسیر سلامت: /health")
-    print("📊 گزارش تعامل‌ها فعال است!")
-    print("💬 چت دوطرفه فعال است!")
-    print("📸 ارسال عکس دوطرفه فعال است!")
-    print("🎥 ارسال فیلم دوطرفه فعال است!")
-    print("🎵 ارسال موزیک و MP3 دوطرفه فعال است!")
-    print("📎 ارسال فایل فعال است!")
-    print("🎤 ارسال ویس فعال است!")
-    print("🔐 محافظت از رسانه برای پارتنر فعال است!")
-    print(f"🌐 آدرس وب‌سایت: {WEBSITE_URL}")
-
-    timer_thread = threading.Thread(target=birthday_timer, daemon=True)
-    timer_thread.start()
-
+    log.info("Starting Ahu Goozlum bot")
+    log.info("BOT_TOKEN configured: %s", bool(TOKEN))
+    log.info("Photos configured: %s", len(PHOTOS))
+    threading.Thread(target=birthday_timer, daemon=True).start()
     port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port, debug=False)
-
-# ============================================================
-# 🚀 قابلیت های توسعه یافته نسخه v3
-# ============================================================
-# 1) پنل مدیریت مالک (زیرساخت فعال)
-ADMIN_PANEL_ENABLED = True
-
-# 2) گالری چندلایه و ثبت مشاهده (زیرساخت فعال)
-SECURE_GALLERY_LOG = {}
-WATERMARK_ENABLED = True
-
-# 3) دفتر خاطرات و مناسبت ها (زیرساخت فعال)
-MEMORIES = []
-SPECIAL_DATES = {}
-
-# ایده های آماده برای توسعه بعدی:
-# - پیام های زمان بندی شده برای مناسبت ها
-# - تایید ورود با کد یکبار مصرف
-# - حذف خودکار پیام بعد از مشاهده
-# - گزارش امنیتی ورودها
-# - جستجو در خاطرات و عکس ها
+    app.run(host="0.0.0.0", port=port, debug=False, threaded=True)
